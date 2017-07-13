@@ -1,0 +1,12 @@
+Package: courserClicker
+Type: Package
+Title: Clicker support for courser presentations
+Version: 0.1.0
+Author: Sebastian Kranz
+Maintainer: Sebastian Kranz <sebastian.kranz@uni-ulm.de>
+Description: Clicker support for courser presentations
+License: GPL >= 2.0
+LazyData: TRUE
+Depends:
+  restorepoint, shinyEvents, stringtools, rmdtools, yaml,
+  shinyEventsUI, shinydashboard, highcharter
