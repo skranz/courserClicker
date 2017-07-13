@@ -1,9 +1,8 @@
-rtutor.clicker.widget.quiz = function() {
-  list(
-    #server.ct.nowrite.fields = "wid",
+rtutor.widget.quiz = function() {
+  Wid = list(
     parse.fun = quiz.clicker.parse,
     server = list(
-      init.handlers = NULL,
+      init.handlers = "default.clicker.server.init.handlers",
       init.ct = NULL,
       start.ct = NULL,
       load.sub.data = NULL,
@@ -18,14 +17,17 @@ rtutor.clicker.widget.quiz = function() {
       ui.fun = NULL
     )
   )
+  Wid$ui.fun = Wid$server$ui.fun
+  Wid$init.handlers =Wid$server$init.handlers
+  Wid
 }
 
 quiz.clicker.server.ui.fun = function(wid,ct=NULL,...,app=getApp(), opts=rt.opts()) {
-  default.clicker.server.ui.fun(wid=wid, above.ui=wid$ui, stop.in=first.non.null(opts$clicker.stop.in,5))  
+  default.clicker.server.ui.fun(wid=wid, above.ui=wid$ui, stop.in=first.non.null(opts$clicker.stop.in,5))
 }
 
 quiz.clicker.server.show.results = function(ct, ...) {
-  show.quiz.task.results(ct=ct)  
+  show.quiz.task.results(ct=ct)
 }
 
 quiz.clicker.parse = function(inner.txt,type="quiz",name="",id=paste0("quiz_",bi),args=NULL, bdf=NULL, bi=NULL, ps=get.ps(),opts = ps$opts,...) {
@@ -71,7 +73,7 @@ quiz.clicker.client.ui = function(qu) {
 
 quiz.clicker.client.part.ui = function(part) {
   restore.point("quiz.clicker.client.part.ui")
-  
+
   head = list(
     HTML(part$question)
   )

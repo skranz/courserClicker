@@ -18,28 +18,33 @@ set.server.ct = function(ct,cs=app$cs, app=getApp()) {
 }
 
 clicker.server.ui.fun = function(...,wid,Wid=get.Widget(wid$type)) {
-  fun = first.non.null(Wid$clicker$server$ui.fun,default.clicker.server.ui.fun)
+  fun = first.non.null(Wid$server$ui.fun,default.clicker.server.ui.fun)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
 clicker.server.init.ct = function(...,wid,Wid=get.Widget(wid$type)) {
-  fun = first.non.null(Wid$clicker$server$init.ct,default.clicker.server.init.ct)
+  fun = first.non.null(Wid$server$init.ct,default.clicker.server.init.ct)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
 
 clicker.server.show.results = function(...,ct=NULL,wid=ct$wid,Wid=get.Widget(wid$type)) {
-  call.fun(Wid$clicker$server$show.results,ct=ct, wid=wid,...)
+  restore.point("clicker.server.show.results")
+  if (is.null(Wid$server$show.results)) {
+    stop(paste0("Your clicker widget ", wid$type," has not implemented the function server$show.results!"))
+  }
+
+  call.fun(Wid$server$show.results,ct=ct, wid=wid,...)
 }
 
 
 clicker.server.start.ct = function(...,wid,Wid=get.Widget(wid$type)) {
-  fun = first.non.null(Wid$clicker$server$start.ct,default.clicker.server.start.ct)
+  fun = first.non.null(Wid$server$start.ct,default.clicker.server.start.ct)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
 clicker.server.stop.ct = function(...,wid,Wid=get.Widget(wid$type)) {
-  fun = first.non.null(Wid$clicker$server$stop.ct,default.clicker.server.stop.ct)
+  fun = first.non.null(Wid$server$stop.ct,default.clicker.server.stop.ct)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
@@ -47,7 +52,7 @@ clicker.server.stop.ct = function(...,wid,Wid=get.Widget(wid$type)) {
 clicker.server.init.handlers = function(...,wid,Wid=get.Widget(wid$type)) {
   restore.point("clicker.server.init.handlers")
 
-  fun = first.non.null(Wid$clicker$server$init.handler,default.clicker.server.init.handlers)
+  fun = first.non.null(Wid$server$init.handler,default.clicker.server.init.handlers)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
@@ -56,6 +61,8 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
   restore.point("default.clicker.server.init.handlers")
 
   ns = NS(wid$task.id)
+
+  courseid = get.courseid(opts)
 
   if (!isTRUE(opts$use.clicker)) {
     cat("\nDon't use clicker.\n")
@@ -69,6 +76,7 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
     warning("No clicker.dir specified.\n")
     return()
   }
+
 
   buttonHandler(ns("startClickerBtn"),function(...) {
     restore.point("startClickerBtn")
@@ -95,7 +103,7 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
   # set course running for clicker
   if (!isTRUE(ps[["wrote.clicker.running"]])) {
     ps$wrote.clicker.running = TRUE
-    write.clicker.running(courseid = opts$courseid, clicker.dir = opts$clicker.dir)
+    write.clicker.running(courseid=get.courseid(opts),clicker.dir = opts$clicker.dir)
   }
 }
 
@@ -135,7 +143,7 @@ default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs
 }
 
 
-default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), courseid=opts$courseid, clicker.dir = opts$clicker.dir, cs=app$cs) {
+default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), courseid=get.courseid(opts), clicker.dir = opts$clicker.dir, cs=app$cs) {
   restore.point("default.clicker.server.start.ct")
 
   ns = NS(wid$task.id)
@@ -195,16 +203,20 @@ default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), o
   })
 }
 
-default.clicker.server.init.ct = function(wid, courseid, clicker.dir, clicker.tag=NULL,Wid = get.Widget(wid$type),...) {
+get.courseid = function(opts=rt.opts()) {
+  first.non.null(opts[["courseid"]], "default")
+}
+
+default.clicker.server.init.ct = function(wid, clicker.dir, clicker.tag=NULL,Wid = get.Widget(wid$type),...) {
   ct = as.environment(wid$ct)
   ct$wid = wid
-  ct$courseid = courseid
+  ct$courseid = get.courseid(courseid)
   ct$clicker.dir = clicker.dir
   ct$task.id = wid$task.id
 
   ct$client.ui = ct$wid$client.ui
 
-  ct$client.init.handlers = Wid$clicker$client$init.handlers
+  ct$client.init.handlers = Wid$client$init.handlers
 
 
   if (is.null(clicker.tag)) {
@@ -215,7 +227,7 @@ default.clicker.server.init.ct = function(wid, courseid, clicker.dir, clicker.ta
 }
 
 
-clicker.server.update.result.tags = function(task.id = wid$task.id,selected="none",clicker.dir=opts$clicker.dir, courseid = opts$courseid, app=getApp(), opts=rt.opts(),wid=NULL) {
+clicker.server.update.result.tags = function(task.id = wid$task.id,selected="none",clicker.dir=opts$clicker.dir, courseid =get.courseid(opts), app=getApp(), opts=rt.opts(),wid=NULL) {
   restore.point("clicker.server.update.result.tags")
 
   ns = NS(task.id)

@@ -41,7 +41,7 @@ load.sub.data = function(ct, clicker.tag = ct$clicker.tag, app=getApp(), Wid = g
 
   dat = readr::read_csv(merge.lines(txt))
 
-  if (!is.null(Wid$clicker$server$transform.sub.data)) {       dat = call.fun(Wid$clicker$server$transform.sub.data,dat,ct)
+  if (!is.null(Wid$server$transform.sub.data)) {       dat = call.fun(Wid$server$transform.sub.data,dat,ct)
   }
   dat
 }
