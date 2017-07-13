@@ -12,16 +12,16 @@ clicker.client.lop = function(glob){
 }
 
 # This function will be called after a succesful login
-clicker.client.login.fun = function(app=getApp(), userid, courseid, target="_self",...) {
+clicker.client.login.fun = function(app=getApp(), userid, courseid="", target="_self",...) {
   restore.point("clicker.client.login.fun")
   glob = app$glob
   if (!isTRUE(glob$use.token)) {
-    tok = list(courseid=courseid, userid=userid)
+    tok = list(courseid=courseid,userid=userid)
     clicker.client.start.task.observer(tok = tok)
     return()
   }
 
-  token = save.login.token(token.dir = glob$token.dir, userid=userid, courseid=courseid,valid.min = glob$token.valid.min)
+  token = save.login.token(token.dir = glob$token.dir, userid=userid,  courseid=courseid, valid.min = glob$token.valid.min)
   url = get.login.token.url(app.url=glob$app.url,token = token)
   html = paste0('<a href="', url,'" class="button" target="',target,'">Click here if clicker app does not open automatically.</a>')
   setUI("mainUI",HTML(html))
@@ -38,9 +38,6 @@ client.clicker.login.ui = function(lop=NULL,ns=lop$ns, init.userid=lop$init.user
     init.userid = paste0("Guest_",glob$guest.count)
     app$guestid = init.userid
   }
-
-  app$glob$running.courses = running = get.running.clicker.courses(clicker.dir = glob$clicker.dir)
-  courses = running$courseid
 
 
   if (identical(lang,"de")) {

@@ -61,9 +61,6 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
   restore.point("default.clicker.server.init.handlers")
 
   ns = NS(wid$task.id)
-
-  courseid = get.courseid(opts)
-
   if (!isTRUE(opts$use.clicker)) {
     cat("\nDon't use clicker.\n")
     return()
@@ -99,12 +96,6 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
 
     cat("\nresultsSelectClick")
   })
-
-  # set course running for clicker
-  if (!isTRUE(ps[["wrote.clicker.running"]])) {
-    ps$wrote.clicker.running = TRUE
-    write.clicker.running(courseid=get.courseid(opts),clicker.dir = opts$clicker.dir)
-  }
 }
 
 
@@ -143,19 +134,19 @@ default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs
 }
 
 
-default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), courseid=get.courseid(opts), clicker.dir = opts$clicker.dir, cs=app$cs) {
+default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), clicker.dir = opts$clicker.dir, cs=app$cs) {
   restore.point("default.clicker.server.start.ct")
 
   ns = NS(wid$task.id)
 
-  ct = clicker.server.init.ct(wid=wid,Wid=Wid, courseid=courseid, clicker.dir=clicker.dir)
+  ct = clicker.server.init.ct(wid=wid,Wid=Wid, clicker.dir=clicker.dir, clicker.tag=clicker.tag)
+
 
   write.ct = as.list(ct)
   write.ct = write.ct[setdiff(names(write.ct),Wid$server.ct.nowrite.fields)]
+  write.ct = write.clicker.task(ct=write.ct,clicker.dir=clicker.dir)
 
-  write.ct = write.clicker.task(ct=write.ct)
-  ct$clicker.tag = write.ct$clicker.tag
-
+  ct = as.environment(ct)
   # set current clicker task
   set.server.ct(ct=ct)
 
@@ -174,7 +165,7 @@ default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), o
     app=getApp()
     restore.point("task.observer")
 
-    dir = file.path(ct$clicker.dir, "sub",ct$courseid, ct$task.id, ct$clicker.tag)
+    dir = ct$tag.dir
     files = list.files(dir)
     cs$num.sub = max(0,length(files))
     if (!is.null(cs$stop.time)) {
@@ -197,42 +188,33 @@ default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), o
       invalidateLater(1000)
     } else {
       setUI(ns("numSubUI"),"")
-      clicker.server.update.result.tags(task.id=ct$task.id,clicker.dir=ct$clicker.dir, courseid = ct$courseid, selected = "latest")
+      clicker.server.update.result.tags(task.id=ct$task.id,clicker.dir=ct$clicker.dir, selected = "latest")
       clicker.server.show.results(ct=ct)
     }
   })
 }
 
-get.courseid = function(opts=rt.opts()) {
-  first.non.null(opts[["courseid"]], "default")
-}
 
-default.clicker.server.init.ct = function(wid, clicker.dir, clicker.tag=NULL,Wid = get.Widget(wid$type),...) {
-  ct = as.environment(wid$ct)
-  ct$wid = wid
-  ct$courseid = get.courseid(courseid)
+default.clicker.server.init.ct = function(wid, clicker.dir, clicker.tag=NULL,Wid = get.Widget(wid$type), opts=rt.opts(),...) {
+  ct = wid$ct
   ct$clicker.dir = clicker.dir
-  ct$task.id = wid$task.id
-
-  ct$client.ui = ct$wid$client.ui
-
   ct$client.init.handlers = Wid$client$init.handlers
-
 
   if (is.null(clicker.tag)) {
     clicker.tag = make.clicker.tag(ct = ct)
   }
+  ct$clicker.tag = clicker.tag
   ct
 
 }
 
 
-clicker.server.update.result.tags = function(task.id = wid$task.id,selected="none",clicker.dir=opts$clicker.dir, courseid =get.courseid(opts), app=getApp(), opts=rt.opts(),wid=NULL) {
+clicker.server.update.result.tags = function(task.id = wid$task.id,selected="none",clicker.dir=opts$clicker.dir,  app=getApp(), opts=rt.opts(),wid=NULL) {
   restore.point("clicker.server.update.result.tags")
 
   ns = NS(task.id)
 
-  tags = get.clicker.tags(clicker.dir=clicker.dir, task.id=task.id, courseid=courseid)
+  tags = get.clicker.tags(clicker.dir=clicker.dir, task.id=task.id)
 
   tags.li = as.list(c("none", "latest", "all",tags))
   names(tags.li) = unlist(tags.li)

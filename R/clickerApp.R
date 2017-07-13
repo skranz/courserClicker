@@ -7,8 +7,7 @@
 clicker.client.example = function() {
   restore.point.options(display.restore.point = TRUE)
 
-  clicker.dir = "D:/libraries/shinyEventsClicker/apps/clickerapp"
-  clicker.dir = "D:/libraries/RTutorTeacher/teacherhub/tgroups/kranz/clicker"
+  clicker.dir = "D:/libraries/courser/courses/vwl/course/clicker"
   setwd(clicker.dir)
   port = 4634
   app.url = "127.0.0.1:4634"
@@ -30,7 +29,7 @@ clickerClientApp = function(opts=clicker.client.opts()) {
   glob$cur.task.file = NULL
   glob$mainUI = "mainUI"
   glob$courses = list()
-  glob$imported.task.files = NULL
+  glob$running.task.file = NULL
 
   lop = clicker.client.lop(glob)
   set.lop(lop)
@@ -41,10 +40,10 @@ clickerClientApp = function(opts=clicker.client.opts()) {
 
   # list of reactive nounces that monitor updates
   # for given courses
-  glob$courses.rv = reactiveValues()
+  glob$update.task.rv = reactiveValues(nonce=0)
 
   obs = observe({
-    clicker.update.tasks(clicker.dir = clicker.dir,glob = glob)
+    clicker.update.task(clicker.dir = clicker.dir,glob = glob)
   })
   set.global.observer("myobs",obs=obs)
 
@@ -53,7 +52,7 @@ clickerClientApp = function(opts=clicker.client.opts()) {
   )
   appInitHandler(function(...,session=app$session,app=getApp()) {
     glob = app$glob
-    courses.rv = glob$courses.rv
+    task.update.rv = glob$task.update.rv
     # we must observe the query string to perform initialization
     app$init.observer = observe(priority = -100,x = {
       if (isTRUE(app$is.initialized)) {
@@ -139,7 +138,6 @@ clicker.client.start.task.observer = function(tok=app$glob$default.token,app=get
   restore.point("clicker.client.start.task.observer")
   app$tok = tok
   app$userid = tok$userid
-  app$courseid = tok$courseid
 
   # destroy old observer
   if (!is.null(app[["task.obs"]]))
@@ -147,7 +145,7 @@ clicker.client.start.task.observer = function(tok=app$glob$default.token,app=get
 
   glob=app$glob
   app$task.obs = observe({
-    glob$courses.rv[[app$courseid]]
+    glob$update.task.rv$nonce
     restore.point("app.task.observer")
     clicker.update.client.task()
     cat("task.nonce changed...")
@@ -155,14 +153,14 @@ clicker.client.start.task.observer = function(tok=app$glob$default.token,app=get
   clicker.update.client.task()
 }
 
-clicker.update.client.task = function(ct = app$glob$ct.li[[app$courseid]], app=getApp()) {
+clicker.update.client.task = function(ct = app$glob[["ct"]], app=getApp()) {
   restore.point("clicker.update.client.task")
 
   if (is.null(ct)) {
     if (!isTRUE(app$no.clicker.task)) {
       app$no.clicker.task = TRUE
       ui = tagList(
-        h4(app$courseid," - ", app$userid),
+        h4("Clicker - ", app$userid),
         p("Currently no task.")
       )
       setUI(app$glob$mainUI, ui)
@@ -178,37 +176,44 @@ clicker.update.client.task = function(ct = app$glob$ct.li[[app$courseid]], app=g
   }
 
   ui = tagList(
-    h4(app$courseid," - ", app$userid),
+    h4("Clicker - ", app$userid),
     ct$client.ui
   )
   setUI(app$glob$mainUI, ui)
 }
 
-clicker.update.tasks = function(clicker.dir, glob=app$glob, app=getApp(), millis=1000) {
-  restore.point("clicker.update.tasks")
+clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=1000) {
+  restore.point("clicker.update.task")
   cat(".")
   #cat("\nI am observed...", sample.int(1000,1))
 
-  files = list.files(file.path(clicker.dir, "tasks"),full.names = FALSE)
+  files = list.files(file.path(clicker.dir, "running_task"),full.names = TRUE)
 
-  files = setdiff(files, glob$imported.task.files)
+  files = setdiff(files, glob$running.task.file)
   if (length(files)==0) {
     invalidateLater(millis)
     return()
   }
   # sort filest by date, newest first
   files = files[order(file.mtime(file.path(clicker.dir,"tasks",files)))]
-  restore.point("clicker.update.tasks.2")
-
-  for (file in files) {
-    ct = read.task.file(file, glob=glob)
-    courseid = first.non.null(ct[["courseid"]],"default")
-    ct$courseid = courseid
-    glob$ct.li[[courseid]] = ct
-    # update reactive values
-    glob$courses.rv[[courseid]] = runif(1)
+  if (length(files)>1) {
+    file.remove(files[-1])
   }
-  glob$imported.task.files = c(glob$imported.task.files, files)
+
+  restore.point("clicker.update.task.2")
+
+  file = basename(files[1])
+  task.id = str.left.of(file,"---")
+
+  task.file = file.path(clicker.dir,"tasks",task.id,"ct.Rds")
+
+  ct = readRDS(task.file)
+  ct$num.sub = 0
+
+  glob$ct = ct
+  # update reactive values
+  glob$task.update.rv$nonce = runif(1)
+  glob$running.task.file = file
   invalidateLater(millis)
 }
 
@@ -219,34 +224,18 @@ clicker.client.submit = function(values, app=getApp()) {
   cat("\nclicker.submit")
   glob = app$glob
   userid = app$userid
-  courseid = app$courseid
 
-  ct = glob$ct.li[[courseid]]
+  ct = glob[["ct"]]
   vals = c(list(submitTime=Sys.time(), userid=app$userid), as.list(values))
 
-  # first submission
-  if (ct$num.sub==0) {
-    dir.create(ct$sub.dir,showWarnings = TRUE,recursive = TRUE)
-    writeLines(paste0(names(vals), collapse=","),file.path(ct$task.sub.dir,"colnames.csv"))
-  }
+  if (!file.exists(file.path(ct$task.dir, "colnames.csv")))
+    writeLines(paste0(names(vals), collapse=","),file.path(ct$task.dir,"colnames.csv"))
 
-  sub.file = file.path(ct$sub.dir, paste0(userid,"_",ct$task.id,".sub"))
+  sub.file = file.path(ct$tag.dir, paste0(userid,".sub"))
   write.table(as.data.frame(vals), file=sub.file, sep=",", row.names=FALSE, col.names= FALSE)
-  glob$ct.li[[courseid]]$num.sub = ct$num.sub+1
+  glob$glob[["ct"]]$num.sub = ct$num.sub+1
 
   setUI(glob$mainUI,p("Your answer is submitted."))
-}
-
-read.task.file = function(file, glob=app$glob, app=getApp()) {
-  restore.point("read.task.file")
-  ct = readRDS(file.path(glob$clicker.dir,"tasks", file))
-  ct$courseid = first.non.null(ct[["courseid"]],"default")
-  ct$file = file
-  ct$num.sub = 0
-  ct$sub.dir = file.path(glob$clicker.dir,"sub",ct$courseid, ct$task.id, ct$clicker.tag)
-  ct$task.sub.dir = file.path(glob$clicker.dir,"sub",ct$courseid, ct$task.id)
-
-  ct
 }
 
 set.global.observer = function(id, ..., obs=observe(...)) {

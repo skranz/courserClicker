@@ -102,21 +102,6 @@ init.app.presenter = function(userid, cs = app$cs, app=getApp()) {
   cs$user.dir = file.path(cs$clicker.dir, "presenters",userid)
   if (!dir.exists(cs$user.dir))
     try(dir.create(cs$user.dir))
-  cs$courses.dir = file.path(cs$user.dir,"courses")
-
-  if (!dir.exists(cs$courses.dir))
-    try(dir.create(cs$courses.dir))
-
-  cs$courses = list.dirs(cs$courses.dir, full.names=FALSE)
-
-  if (cs$courses=="") {
-    cs$courses = "default"
-    try(dir.create(file.path(cs$courses.dir,"default")))
-  }
-
-  cs$courseid = cs$courses[1]
-
-  updateSelectInput(app$session,inputId = "selCourse",choices = cs$courses)
 
 }
 
@@ -136,7 +121,6 @@ parse.and.send.quiz.task = function(yaml, app=getApp()) {
   } else {
     setUI("msgUI",p(paste0("Task sent to users. TaskId: ", ct$task.id)))
   }
-  ct$courseid = cs$courseid
 
   cs$ct = ct
   write.clicker.task(ct=ct, clicker.dir=app$cs$clicker.dir,cs=cs)
@@ -202,35 +186,32 @@ start.server.task.observer = function(ct=cs$ct,cs=app$cs,app=getApp()) {
   })
 }
 
-clicker.task.file.name = function(ct=NULL,courseid=ct$courseid, base.name = random.string(nchar = 20)) {
-  restore.point("clicker.task.file.name")
-
-  file = paste0(courseid,".",base.name)
-  file
-}
-
-clean.clicker.tasks = function(courseid, clicker.dir) {
-  restore.point("clean.clicker.tasks")
-
-  task.dir = file.path(clicker.dir,"tasks")
-  files = list.files(task.dir)
-  courses = str.left.of(files,".")
-  del = files[is.true(courses==courseid)]
-  for (file in del) {
-    try(file.remove(file.path(task.dir,del)))
-  }
-
-}
-
-write.clicker.task = function(ct,clicker.dir=ct$clicker.dir,file = clicker.task.file.name(ct=ct),courseid=ct$courseid, clicker.tag=first.non.null(ct[["clicker.tag"]],make.clicker.tag(clicker.dir=clicker.dir, ct=ct))) {
+write.clicker.task = function(ct,clicker.dir=ct$clicker.dir, clicker.tag=first.non.null(ct[["clicker.tag"]],make.clicker.tag(clicker.dir=clicker.dir, ct=ct))) {
   restore.point("write.clicker.task")
 
-  clean.clicker.tasks(courseid = courseid, clicker.dir=clicker.dir)
+  task.id = ct$task.id
   ct$clicker.tag = clicker.tag
 
-  long.file = file.path(clicker.dir,"tasks",file)
+  task.dir = ct$task.dir = file.path(clicker.dir, "tasks", task.id)
+  if (!dir.exists(task.dir)) dir.create(task.dir,recursive = TRUE)
+
+  tag.dir = ct$tag.dir = file.path(task.dir,"tags",clicker.tag)
+  if (!dir.exists(tag.dir)) dir.create(tag.dir,recursive = TRUE)
+
+  long.file = file.path(task.dir, "ct.Rds")
   ct = as.list(ct)
   saveRDS(ct, long.file, compress=FALSE)
+
+  # write file that specifies task as running
+  running.dir = file.path(clicker.dir, "running_task")
+
+  # remove existing running files
+  files = list.files(running.dir,full.names = TRUE)
+  file.remove(files)
+
+  running.file = file.path(running.dir,paste0(ct$task.id,"---", as.integer(Sys.time())))
+  writeLines("",running.file)
+
   invisible(ct)
 }
 
@@ -261,24 +242,22 @@ import.yaml.with.source = function(txt=readLines(file, warn=FALSE), file=NULL, s
 }
 
 
-
-get.clicker.tags = function(clicker.dir=ct$clicker.dir, ct=NULL, courseid=ct$courseid, task.id = ct$task.id) {
+get.clicker.tags = function(clicker.dir=ct$clicker.dir, ct=NULL, task.id = ct$task.id) {
   restore.point("get.clicker.tags")
 
 
-  sub.dir = file.path(clicker.dir, "sub", courseid, task.id)
+  tag.dir = file.path(clicker.dir, "tasks", task.id,"tags")
   if (!dir.exists(sub.dir)) return(NULL)
 
-  dirs = list.dirs(sub.dir,full.names = FALSE,recursive = FALSE)
+  dirs = list.dirs(tag.dir,full.names = FALSE,recursive = FALSE)
   return(dirs)
 }
 
 
-make.clicker.tag = function(clicker.dir=ct$clicker.dir, courseid=ct$courseid, task.id = ct$task.id,ct=NULL) {
+make.clicker.tag = function(clicker.dir=ct$clicker.dir, task.id = ct$task.id,ct=NULL) {
   restore.point("make.clicker.tag")
 
-
-  dirs = get.clicker.tags(clicker.dir, ct, courseid, task.id)
+  dirs = get.clicker.tags(clicker.dir, ct, task.id)
   if (is.null(dirs)) return("1")
   return(as.character(length(dirs)+1))
 }

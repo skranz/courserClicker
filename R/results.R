@@ -30,18 +30,19 @@ load.sub.data = function(ct, clicker.tag = ct$clicker.tag, app=getApp(), Wid = g
 
   if (length(clicker.tag)==0) return(NULL)
 
-  dirs = file.path(ct$clicker.dir, "sub",ct$courseid, ct$task.id, clicker.tag)
+  dirs = file.path(ct$clicker.dir, "tasks", ct$task.id, clicker.tag)
   files = unlist(lapply(dirs, function(dir) list.files(dir,pattern = glob2rx("*.sub"),full.names = TRUE)))
   if (length(files)==0) return(NULL)
 
-  header.file = file.path(ct$clicker.dir, "sub",ct$courseid, ct$task.id,"colnames.csv")
+  header.file = file.path(ct$clicker.dir, "tasks", ct$task.id,"colnames.csv")
   txt = readLines(header.file,warn = FALSE)
   li = unlist(lapply(files, readLines,warn=FALSE))
   txt = c(txt, li)
 
   dat = readr::read_csv(merge.lines(txt))
 
-  if (!is.null(Wid$server$transform.sub.data)) {       dat = call.fun(Wid$server$transform.sub.data,dat,ct)
+  if (!is.null(Wid$server$transform.sub.data)) {
+    dat = call.fun(Wid$server$transform.sub.data,dat,ct)
   }
   dat
 }

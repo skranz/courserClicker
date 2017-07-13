@@ -40,11 +40,12 @@ quiz.clicker.parse = function(inner.txt,type="quiz",name="",id=paste0("quiz_",bi
 
   qu = shinyQuiz(id = task.id,yaml = merge.lines(inner.txt), bdf = NULL,add.handler = FALSE, whiskers=whiskers, add.check.btn=FALSE)
   client.ui = quiz.clicker.client.ui(qu)
+
   qu$ct = list(
     type = "quiz",
     task.id = task.id,
     client.ui = client.ui,
-    qu = qu
+    wid = qu
   )
   qu
 }
