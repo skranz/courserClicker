@@ -1,4 +1,4 @@
-show.quiz.task.results = function(ct, app=getApp(),outputId = NS(ct$qu$id,"resultsUI"),clicker.tag="latest",...) {
+show.quiz.task.results = function(ct, app=getApp(),outputId = NS(ct$wid$id,"resultsUI"),clicker.tag=ct$clicker.tag,...) {
   restore.point("show.quiz.task.results")
   dat = load.sub.data(ct=ct, clicker.tag=clicker.tag)
 
@@ -8,7 +8,7 @@ show.quiz.task.results = function(ct, app=getApp(),outputId = NS(ct$qu$id,"resul
     return()
   }
 
-  qu = ct$qu
+  qu = ct$wid
   part =qu$parts[[1]]
   if (isTRUE(part$type=="sc")) {
     show.clicker.quiz.sc.results(dat=dat,qu=qu,outputId = outputId)
@@ -26,7 +26,10 @@ show.clicker.quiz.sc.results = function(dat, qu,part = qu$parts[[1]], show.sol=T
   restore.point("clicker.quiz.sc.results.ui")
 
   choices = unlist(part$choices)
-  var = names(dat)[[3]]
+  has.mathjax = any(has.substr(choices,"\\("))
+  if (is.na(do.plot)) do.plot = !has.mathjax
+
+  var = names(dat)[[NCOL(dat)]]
   counts = count.choices(dat[[var]], choices)
   shares = round(100*counts / max(1,sum(counts)))
 
@@ -55,6 +58,7 @@ show.clicker.quiz.sc.results = function(dat, qu,part = qu$parts[[1]], show.sol=T
     setUI(outputId,ui)
     dsetUI(outputId,ui)
     app$session$output[[plotId]] = renderHighchart(plot)
+  # show a table
   } else {
     n = length(choices)
     bg.color = rep("#fff",n)
@@ -65,9 +69,10 @@ show.clicker.quiz.sc.results = function(dat, qu,part = qu$parts[[1]], show.sol=T
     }
     df = data_frame(counts, paste0("(",shares,"%)"), choices)
 
-    html = html.result.table(df,colnames=c("","","",""), font.size="120%", align=c("center","center","left"),bg.color = bg.color)
+    html = html.result.table(df,colnames=c("Number","Share","Answer",""), font.size="110%", align=c("center","center","left"),bg.color = bg.color)
 
     ui = tagList(HTML(html))
+    if (has.mathjax) ui = armd::with.mathjax(ui)
     setUI(outputId, ui)
   }
   invisible(ui)
@@ -219,7 +224,7 @@ normalize.clicker.tag = function(ct, clicker.tag) {
 quiz.clicker.transform.sub.data = function(dat, ct) {
   restore.point("transform.sub.data")
   if (isTRUE(ct$type=="quiz")) {
-    part = ct$qu$parts[[1]]
+    part = ct$wid$parts[[1]]
     if (isTRUE(part$type=="mc")) {
       dat = transform.to.mc.data(dat, part$choices)
     }

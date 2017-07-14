@@ -94,5 +94,5 @@ remove.expired.login.tokens = function(token.dir) {
 }
 
 clicker.default.token = function() {
-  list(courseid="default", userid="Guest", created=Sys.time(), valid=Inf)
+  list(userid="Guest", created=Sys.time(), valid=Inf)
 }

@@ -57,6 +57,7 @@ clicker.server.init.handlers = function(...,wid,Wid=get.Widget(wid$type)) {
 }
 
 
+
 default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),opts=ps$opts, Wid = get.Widget(wid$type),...) {
   restore.point("default.clicker.server.init.handlers")
 
@@ -74,6 +75,7 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
     return()
   }
 
+  clicker.dir = opts$clicker.dir
 
   buttonHandler(ns("startClickerBtn"),function(...) {
     restore.point("startClickerBtn")
@@ -86,18 +88,22 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
 
   clicker.server.update.result.tags(wid=wid)
 
-  selectChangeHandler(id = ns("resultsRunSelect"),fun=function(id,value,...) {
+  selectChangeHandler(id = ns("resultsRunSelect"),fun=function(id,value,...,app=getApp()) {
     args = list(...)
     #value = getInputValue(id)
-    restore.point("resultsRundSelectChange")
+    restore.point("resultsRunSelectChange")
 
-    # Need to reimplement
-    #show.task.results(ct=ct, clicker.tag=value)
+    ct = wid$ct
+    ct$clicker.tag = value
+    ct$clicker.dir = clicker.dir
+    ct$task.dir = file.path(clicker.dir, "tasks", ct$task.id)
+    ct$tag.dir = file.path(ct$task.dir,"tags",ct$clicker.tag)
+
+    clicker.server.show.results(wid = wid, ct=ct, clicker.tag=value, Wid=Wid)
 
     cat("\nresultsSelectClick")
   })
 }
-
 
 default.clicker.server.ui.fun = function(wid=NULL,task.id=wid$task.id,above.ui=wid$ui,ns=NS(task.id), stop.in=5) {
   tagList(
@@ -189,7 +195,7 @@ default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), o
     } else {
       setUI(ns("numSubUI"),"")
       clicker.server.update.result.tags(task.id=ct$task.id,clicker.dir=ct$clicker.dir, selected = "latest")
-      clicker.server.show.results(ct=ct)
+      clicker.server.show.results(wid=wid, ct=ct, Wid=Wid)
     }
   })
 }
@@ -204,6 +210,9 @@ default.clicker.server.init.ct = function(wid, clicker.dir, clicker.tag=NULL,Wid
     clicker.tag = make.clicker.tag(ct = ct)
   }
   ct$clicker.tag = clicker.tag
+  ct$task.dir = file.path(clicker.dir, "tasks", ct$task.id)
+  ct$tag.dir = file.path(ct$task.dir,"tags",clicker.tag)
+
   ct
 
 }

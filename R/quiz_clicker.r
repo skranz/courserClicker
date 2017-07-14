@@ -27,7 +27,7 @@ quiz.clicker.server.ui.fun = function(wid,ct=NULL,...,app=getApp(), opts=rt.opts
 }
 
 quiz.clicker.server.show.results = function(ct, ...) {
-  show.quiz.task.results(ct=ct)
+  show.quiz.task.results(ct=ct,...)
 }
 
 quiz.clicker.parse = function(inner.txt,type="quiz",name="",id=paste0("quiz_",bi),args=NULL, bdf=NULL, bi=NULL, ps=get.ps(),opts = ps$opts,...) {
@@ -90,12 +90,12 @@ quiz.clicker.client.part.ui = function(part) {
   list(head,answer,uiOutput(part$resultId))
 }
 
-quiz.clicker.client.init.handlers = function(ct=NULL,qu=ct$qu){
+quiz.clicker.client.init.handlers = function(ct=NULL,qu=ct$wid){
   restore.point("quiz.clicker.client.init.handlers")
   buttonHandler(qu$checkBtnId, function(...) {
     part = qu$parts[[1]]
     answer = getInputValue(part$answerId)
-    clicker.submit(values=list(answer=answer))
+    clicker.client.submit(values=list(answer=answer))
   })
 }
 

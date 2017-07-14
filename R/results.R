@@ -30,7 +30,7 @@ load.sub.data = function(ct, clicker.tag = ct$clicker.tag, app=getApp(), Wid = g
 
   if (length(clicker.tag)==0) return(NULL)
 
-  dirs = file.path(ct$clicker.dir, "tasks", ct$task.id, clicker.tag)
+  dirs = file.path(ct$clicker.dir, "tasks", ct$task.id, "tags", clicker.tag)
   files = unlist(lapply(dirs, function(dir) list.files(dir,pattern = glob2rx("*.sub"),full.names = TRUE)))
   if (length(files)==0) return(NULL)
 
@@ -78,8 +78,8 @@ html.result.table = function(df,colnames=colnames(df), bg.color="#fff", font.siz
 
   tab = paste0('<table>\n', head, main, "\n</table>")
 
-  th.style='font-weight: bold; margin: 3px; padding: 3px; text-align: center;'
-  td.style='font-family: Verdana,Geneva,sans-serif; margin: 0px 3px 1px 3px; padding: 1px 3px 1px 3px; text-align: center;'
+  th.style='font-weight: bold; margin: 3px; padding: 3px; text-align: center; border-bottom: solid;'
+  td.style='font-family: Verdana,Geneva,sans-serif; margin: 0px 3px 1px 3px; padding: 1px 3px 1px 3px; text-align: center; border-bottom: solid;'
 
   if (!is.null(font.size)) {
     th.style = paste0(th.style, "font-size: ", font.size,";")

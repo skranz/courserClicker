@@ -12,16 +12,16 @@ clicker.client.lop = function(glob){
 }
 
 # This function will be called after a succesful login
-clicker.client.login.fun = function(app=getApp(), userid, courseid="", target="_self",...) {
+clicker.client.login.fun = function(app=getApp(), userid, target="_self",...) {
   restore.point("clicker.client.login.fun")
   glob = app$glob
   if (!isTRUE(glob$use.token)) {
-    tok = list(courseid=courseid,userid=userid)
+    tok = list(userid=userid)
     clicker.client.start.task.observer(tok = tok)
     return()
   }
 
-  token = save.login.token(token.dir = glob$token.dir, userid=userid,  courseid=courseid, valid.min = glob$token.valid.min)
+  token = save.login.token(token.dir = glob$token.dir, userid=userid, valid.min = glob$token.valid.min)
   url = get.login.token.url(app.url=glob$app.url,token = token)
   html = paste0('<a href="', url,'" class="button" target="',target,'">Click here if clicker app does not open automatically.</a>')
   setUI("mainUI",HTML(html))
@@ -88,23 +88,24 @@ clicker.login.btn.click = function(app=getApp(),lop,formValues,ns=lop$ns,...) {
   userid = formValues[[ns("loginUser")]]
   password = formValues[[ns("loginPassword")]]
 
+  # currently we don't use courses
   #extract course
-  courseid = formValues[[ns("loginCourse")]]
-  coursecode = formValues[[ns("loginCode")]]
+  #courseid = formValues[[ns("loginCourse")]]
+  #coursecode = formValues[[ns("loginCode")]]
 
-  fc = login.find.course(courseid=courseid, coursecode=coursecode)
+  #fc = login.find.course(courseid=courseid, coursecode=coursecode)
 
-  if (!fc$ok) {
-    setUI(ns("loginAlert"),HTML(fc$msg))
-    return()
-  }
+  #if (!fc$ok) {
+  #  setUI(ns("loginAlert"),HTML(fc$msg))
+  #  return()
+  #}
 
-  courseid = fc$courseid
+  #courseid = fc$courseid
   # guest can login without password
   if (identical(userid,app$guestid)) {
-    lop$login.fun(userid=userid, password=password, lop=lop,courseid=courseid)
+    lop$login.fun(userid=userid, password=password, lop=lop)
   } else {
-    lop.login.btn.click(app=app,lop=lop,formValues=formValues,ns=ns,courseid=courseid,...)
+    lop.login.btn.click(app=app,lop=lop,formValues=formValues,ns=ns,...)
   }
 }
 

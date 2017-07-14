@@ -12,7 +12,7 @@ clicker.client.example = function() {
   port = 4634
   app.url = "127.0.0.1:4634"
   app.url = "http://localhost:4634"
-  opts = clicker.client.opts(clicker.dir=clicker.dir, app.url=app.url, show.course.list = TRUE, show.course.code=FALSE, use.token=FALSE, use.login.db=FALSE)
+  opts = clicker.client.opts(clicker.dir=clicker.dir, app.url=app.url, show.course.list = FALSE, show.course.code=FALSE, use.token=FALSE, use.login.db=FALSE)
   app = clickerClientApp(opts)
   viewApp(app, port=port)
 }
@@ -125,7 +125,7 @@ clicker.client.opts = function(
   smtp = NULL,
   token.valid.min = 180,
   allow.guest.login=TRUE, open.app.in.new.tab=TRUE,
-  show.course.list=FALSE, show.course.code=TRUE,
+  show.course.list=FALSE, show.course.code=FALSE,
   ...)
 {
   c(as.list(environment()),list(...))
@@ -218,15 +218,17 @@ clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=
 }
 
 
-clicker.client.submit = function(values, app=getApp()) {
+clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   restore.point("clicker.client.submit")
 
-  cat("\nclicker.submit")
+  cat("\nclicker.client.submit")
   glob = app$glob
   userid = app$userid
 
   ct = glob[["ct"]]
-  vals = c(list(submitTime=Sys.time(), userid=app$userid), as.list(values))
+  tag = basename(ct$tag.dir)
+
+  vals = c(list(submitTime=Sys.time(),task.id=ct$task.id, tag=tag, userid=app$userid), as.list(values))
 
   if (!file.exists(file.path(ct$task.dir, "colnames.csv")))
     writeLines(paste0(names(vals), collapse=","),file.path(ct$task.dir,"colnames.csv"))

@@ -12,14 +12,21 @@ choices.barplot = function(values, choices=names(counts), counts=NULL,col="#ff88
   shares = nn_counts / max(sum(nn_counts),1)
 
   highchart() %>%
-  hc_chart(type = "column") %>%
+  hc_chart(type = "column", events=list(
+      redraw = JS('function () {
+          //alert("The chart is being redrawn");
+          MathJax.Hub.Queue(["Typeset", MathJax.Hub]);
+        }'
+      )
+    )
+  ) %>%
   hc_plotOptions(
     column=list(
       dataLabels=list(enabled=TRUE),colorByPoint = TRUE,colors=colors
     ),
     colors=colors
   ) %>%
-  hc_xAxis(categories = choice.labels) %>%
+  hc_xAxis(labels=list(useHTML=TRUE),categories = choice.labels) %>%
   hc_add_series(data = nn_counts,name = "Number of answers",showInLegend=FALSE)
 
 }
