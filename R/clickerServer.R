@@ -193,10 +193,10 @@ write.clicker.task = function(ct,clicker.dir=ct$clicker.dir, clicker.tag=first.n
   ct$clicker.tag = clicker.tag
 
   task.dir = ct$task.dir = file.path(clicker.dir, "tasks", task.id)
-  if (!dir.exists(task.dir)) dir.create(task.dir,recursive = TRUE)
+  if (!dir.exists(task.dir)) dir.create(task.dir,recursive = TRUE,mode = "777")
 
   tag.dir = ct$tag.dir = file.path(task.dir,"tags",clicker.tag)
-  if (!dir.exists(tag.dir)) dir.create(tag.dir,recursive = TRUE)
+  if (!dir.exists(tag.dir)) dir.create(tag.dir,recursive = TRUE, mode="777")
 
   long.file = file.path(task.dir, "ct.Rds")
   ct = as.list(ct)
