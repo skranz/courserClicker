@@ -193,11 +193,15 @@ write.clicker.task = function(ct,clicker.dir=ct$clicker.dir, clicker.tag=first.n
   ct$clicker.tag = clicker.tag
 
   task.dir = ct$task.dir = file.path(clicker.dir, "tasks", task.id)
-  if (!dir.exists(task.dir)) dir.create(task.dir,recursive = TRUE,mode = "777")
-
+  if (!dir.exists(task.dir)) {
+    dir.create(task.dir,recursive = TRUE)
+    Sys.chmod(task.dir, mode="777", use_umask = FALSE)
+  }
   tag.dir = ct$tag.dir = file.path(task.dir,"tags",clicker.tag)
-  if (!dir.exists(tag.dir)) dir.create(tag.dir,recursive = TRUE, mode="777")
-
+  if (!dir.exists(tag.dir)) {
+    dir.create(tag.dir,recursive = TRUE)
+    Sys.chmod(tag.dir, mode="777", use_umask = FALSE)
+  }
   long.file = file.path(task.dir, "ct.Rds")
   ct = as.list(ct)
   saveRDS(ct, long.file, compress=FALSE)
