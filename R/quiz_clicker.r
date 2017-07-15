@@ -92,9 +92,8 @@ quiz.clicker.client.part.ui = function(part) {
 
 quiz.clicker.client.init.handlers = function(ct=NULL,qu=ct$wid){
   restore.point("quiz.clicker.client.init.handlers")
-  buttonHandler(qu$checkBtnId, function(...) {
-    part = qu$parts[[1]]
-    answer = getInputValue(part$answerId)
+  buttonHandler(qu$checkBtnId, function(formValues,...) {
+    answer = formValues[[1]]
     clicker.client.submit(values=list(answer=answer))
   })
 }
