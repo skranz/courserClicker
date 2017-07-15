@@ -43,10 +43,10 @@ client.clicker.login.ui = function(lop=NULL,ns=lop$ns, init.userid=lop$init.user
   if (identical(lang,"de")) {
     widgets = list(
       HTML(title.html),
-      if (glob$show.course.list)
-        selectInput(ns("loginCourse"),"Kurs:", choices = courses),
-      if (glob$show.course.code)
-        textInput(ns("loginCode"),"Code des Kurses:", value=""),
+      #if (glob$show.course.list)
+      #  selectInput(ns("loginCourse"),"Kurs:", choices = courses),
+      #if (glob$show.course.code)
+      #  textInput(ns("loginCode"),"Code des Kurses:", value=""),
       textInput(ns("loginUser"), "Nutzer", value = init.userid),
       if (glob$use.login.db)
         passwordInput(ns("loginPassword"), "Passwort", value = init.password),
@@ -59,10 +59,10 @@ client.clicker.login.ui = function(lop=NULL,ns=lop$ns, init.userid=lop$init.user
   } else {
     widgets = list(
       HTML(title.html),
-      if (glob$show.course.list)
-        selectInput(ns("loginCourse"),"Course:", choices = courses),
-      if (glob$show.course.code)
-        textInput(ns("loginCode"),"Course code:", value=""),
+      #if (glob$show.course.list)
+      #  selectInput(ns("loginCourse"),"Course:", choices = courses),
+      #if (glob$show.course.code)
+      #  textInput(ns("loginCode"),"Course code:", value=""),
       textInput(ns("loginUser"), "User", value = init.userid),
       if (glob$use.login.db)
         passwordInput(ns("loginPassword"), "Password", value = init.password),

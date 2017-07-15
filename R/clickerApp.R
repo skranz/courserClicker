@@ -28,7 +28,6 @@ clickerClientApp = function(opts=clicker.client.opts()) {
   glob$clicker.dir = glob$clicker.dir
   glob$cur.task.file = NULL
   glob$mainUI = "mainUI"
-  glob$courses = list()
   glob$running.task.file = NULL
 
   lop = clicker.client.lop(glob)
