@@ -30,12 +30,33 @@ show.quiz.task.results = function(ct, app=getApp(),outputId = NS(ct$wid$id,"resu
       show.clicker.quiz.mc.results(dat=dat,qu=qu,part.ind = i, outputId = curId)
     } else if (isTRUE(part$type=="numeric")) {
       show.clicker.quiz.numeric.results(dat=dat,part.ind = i, qu=qu,outputId = curId)
+    } else if (isTRUE(part$type=="grid_sc")) {
+      show.clicker.quiz.grid.sc.results(dat=dat,part.ind = i, qu=qu,outputId = curId)
     }
   }
   return()
 }
 
-show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[part.ind]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
+show.clicker.quiz.grid.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[part.ind]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
+  restore.point("show.clicker.quiz.grid.sc.results")
+  outputIds = paste0(outputId,"-",seq_along(qu$rows))
+  ui.li = lapply(seq_along(qu$rows), function(i) {
+    tagList(
+      p(paste0(part$rows[[i]],":")),
+      uiOutput(outputIds[[i]])
+    )
+  })
+  setUI(outputId, tagList(ui.li))
+
+  for (i in seq_along(qu$rows)) {
+    curId = outputIds[[i]]
+    cur.part.ind = part.ind*1000+i
+    show.clicker.quiz.sc.results(dat=dat,qu=qu,part.ind=cur.part.ind, outputId = curId,part=part, show.header = FALSE, answer=part$answers[[i]])
+  }
+
+}
+
+show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[part.ind]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp(), show.header=TRUE, answer = if (show.sol) part$answer else NULL) {
   restore.point("clicker.quiz.sc.results.ui")
 
   dat = dat[dat$part.ind==part.ind,,drop=FALSE]
@@ -48,7 +69,7 @@ show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
   counts = count.choices(dat[[var]], choices)
   shares = round(100*counts / max(1,sum(counts)))
 
-  answer = if (show.sol) part$answer else NULL
+
 
   nans = NROW(dat)
 
@@ -65,7 +86,7 @@ show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
     # need random string to correctly rerender plot
     plotId = paste0(outputId,"_Plot_",random.string(nchar=8))
     ui = tagList(
-      HTML(part$question), p(paste0("(",nans," replies)")),
+      if (show.header) tagList(HTML(part$question), p(paste0("(",nans," replies)"))),
       div(style="height=14em",
         highchartOutput(plotId, height="14em")
       )

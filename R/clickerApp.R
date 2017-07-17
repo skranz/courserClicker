@@ -238,12 +238,30 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   # containing the checked answers
 
   submit.time = Sys.time()
-  li = lapply(seq_along(values), function(i) {
-    answers = unlist(values[[i]])
-    answer.ind = match(answers, ct$wid$parts[[i]]$answer)
-    data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i, userid=app$userid, answer.ind=answer.ind, answer =  answers)
-  })
-  df = bind_rows(li)
+
+  qu = ct$wid
+  li = vector("list", length(qu$parts))
+  value.i = 1
+  i = 1
+  for (i in seq_along(li)) {
+    part = qu$parts[[i]]
+    if (part$type == "grid_mc" | part$type == "grid_sc") {
+      value.i = (value.i:(value.i+length(part$rows)-1))
+      answers = unlist(values[value.i])
+      answer.ind = match(answers, part$cols)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i*1000+seq_along(answers), userid=app$userid, answer.ind=answer.ind, answer =  answers)
+
+    } else {
+      answers = unlist(values[[value.i]])
+      answer.ind = match(answers, part$answer)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i, userid=app$userid, answer.ind=answer.ind, answer =  answers)
+    }
+  }
+  if (length(li)>1) {
+    df = bind_rows(li)
+  } else {
+    df = li[[1]]
+  }
 
   if (!file.exists(file.path(ct$task.dir, "colnames.csv")))
     writeLines(paste0(colnames(df), collapse=","),file.path(ct$task.dir,"colnames.csv"))
