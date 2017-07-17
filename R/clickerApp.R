@@ -12,7 +12,7 @@ clicker.client.example = function() {
   port = 4634
   app.url = "127.0.0.1:4634"
   app.url = "http://localhost:4634"
-  opts = clicker.client.opts(clicker.dir=clicker.dir, app.url=app.url, show.course.list = FALSE, show.course.code=FALSE, use.token=FALSE, use.login.db=FALSE)
+  opts = clicker.client.opts(clicker.dir=clicker.dir, app.url=app.url, show.course.list = FALSE, show.course.code=FALSE, use.token=FALSE, use.login.db=FALSE, app.title="Vorlesungsquiz VWL", lang="de")
   app = clickerClientApp(opts)
   viewApp(app, port=port)
 }
@@ -29,6 +29,8 @@ clickerClientApp = function(opts=clicker.client.opts()) {
   glob$cur.task.file = NULL
   glob$mainUI = "mainUI"
   glob$running.task.file = NULL
+  glob$clicker.pag
+  glob$page.params = make.clicker.page.params(opts$page.params, lang=opts[["lang"]])
 
   lop = clicker.client.lop(glob)
   set.lop(lop)
@@ -47,6 +49,7 @@ clickerClientApp = function(opts=clicker.client.opts()) {
   set.global.observer("myobs",obs=obs)
 
   app$ui = bootstrapPage(
+    uiOutput("titleUI"),
     uiOutput("mainUI")
   )
   appInitHandler(function(...,session=app$session,app=getApp()) {
@@ -125,6 +128,8 @@ clicker.client.opts = function(
   token.valid.min = 180,
   allow.guest.login=TRUE, open.app.in.new.tab=TRUE,
   show.course.list=FALSE, show.course.code=FALSE,
+  lang="en",
+  page.params=list(title=app.title),
   ...)
 {
   c(as.list(environment()),list(...))
@@ -142,6 +147,8 @@ clicker.client.start.task.observer = function(tok=app$glob$default.token,app=get
   if (!is.null(app[["task.obs"]]))
     app$task.obs$destroy()
 
+  setUI("titleUI", clicker.title.ui(app$glob$page.params))
+
   glob=app$glob
   app$task.obs = observe({
     glob$update.task.rv$nonce
@@ -158,10 +165,7 @@ clicker.update.client.task = function(ct = app$glob[["ct"]], app=getApp()) {
   if (is.null(ct)) {
     if (!isTRUE(app$no.clicker.task)) {
       app$no.clicker.task = TRUE
-      ui = tagList(
-        h4("Clicker - ", app$userid),
-        p("Currently no task.")
-      )
+      ui = clicker.client.wait.page(app$glob$page.params)
       setUI(app$glob$mainUI, ui)
     }
     return()
@@ -173,12 +177,7 @@ clicker.update.client.task = function(ct = app$glob[["ct"]], app=getApp()) {
   } else if (is.character(ct$client.init.handlers)) {
     do.call(ct$client.init.handlers, list(ct=ct))
   }
-
-  ui = tagList(
-    h4("Clicker - ", app$userid),
-    ct$client.ui
-  )
-  setUI(app$glob$mainUI, ui)
+  setUI(app$glob$mainUI, ct$client.ui)
 }
 
 clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=1000) {
@@ -236,7 +235,8 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   write.table(as.data.frame(vals), file=sub.file, sep=",", row.names=FALSE, col.names= FALSE)
   glob$glob[["ct"]]$num.sub = ct$num.sub+1
 
-  setUI(glob$mainUI,p("Your answer is submitted."))
+  ui= clicker.client.submitted.page(glob$page.params, answer=values$answer)
+  setUI(glob$mainUI,ui)
 }
 
 set.global.observer = function(id, ..., obs=observe(...)) {

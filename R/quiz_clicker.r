@@ -39,19 +39,20 @@ quiz.clicker.parse = function(inner.txt,type="quiz",name="",id=paste0("quiz_",bi
   }
 
   qu = shinyQuiz(id = task.id,yaml = merge.lines(inner.txt), bdf = NULL,add.handler = FALSE, whiskers=whiskers, add.check.btn=FALSE)
-  client.ui = quiz.clicker.client.ui(qu)
+  client.ui = quiz.clicker.client.ui(qu, lang=opts[["lang"]])
 
   qu$ct = list(
     type = "quiz",
     task.id = task.id,
     client.ui = client.ui,
-    wid = qu
+    wid = qu,
+    lang=opts[["lang"]]
   )
   qu
 }
 
 
-quiz.clicker.client.ui = function(qu) {
+quiz.clicker.client.ui = function(qu, lang="en") {
   restore.point("quiz.clicker.client.ui")
   pli = lapply(seq_along(qu$parts), function(i) {
     restore.point("quiz.clicker.client.ui")
@@ -66,7 +67,8 @@ quiz.clicker.client.ui = function(qu) {
   })
   if (!is.null(qu$checkBtnId)) {
     ids = sapply(qu$parts, function(part) part$answerId)
-    pli = c(pli, list(submitButton(qu$checkBtnId,label = "Send",form.ids = ids),br()))
+    sendLabel = clicker.client.sendBtnLabel(lang)
+    pli = c(pli, list(submitButton(qu$checkBtnId,label = sendLabel,form.ids = ids),br()))
   }
 
   withMathJax(pli)
