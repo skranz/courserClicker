@@ -34,7 +34,7 @@ default.clicker.pages.params = function(lang="en") {
       title="Vorlesungsquiz",
       sendLabel="Absenden",
       wait="Bitte warten Sie, bis das nächste Quiz gestartet wird.",
-      answerLab="Sie haben folgende Antworte(n) gewählt:",
+      answerLab="Sie haben folgende Antwort(en) gewählt:",
       solutionLab="Richtige Lösung:"
     ))
   } else {

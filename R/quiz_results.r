@@ -9,21 +9,36 @@ show.quiz.task.results = function(ct, app=getApp(),outputId = NS(ct$wid$id,"resu
   }
 
   qu = ct$wid
-  part =qu$parts[[1]]
-  if (isTRUE(part$type=="sc")) {
-    show.clicker.quiz.sc.results(dat=dat,qu=qu,outputId = outputId)
-  } else if (isTRUE(part$type=="mc")) {
-    show.clicker.quiz.mc.results(dat=dat,qu=qu,outputId = outputId)
-  } else if (isTRUE(part$type=="numeric")) {
-    show.clicker.quiz.numeric.results(dat=dat,qu=qu,outputId = outputId)
+
+  num.parts = length(qu$parts)
+  if (num.parts > 1) {
+    parts.outputId = paste0(outputId,"-",seq_along(qu$parts))
+    ui = lapply(seq_along(qu$parts), function(i) {
+      uiOutput(parts.outputId[[i]])
+    })
+    setUI(outputId, tagList(ui))
+  } else {
+    parts.outputId = outputId
   }
 
-
+  for (i in seq_along(qu$parts)) {
+    curId = parts.outputId[[i]]
+    part = qu$parts[[i]]
+    if (isTRUE(part$type=="sc")) {
+      show.clicker.quiz.sc.results(dat=dat,qu=qu,part.ind=i, outputId = curId)
+    } else if (isTRUE(part$type=="mc")) {
+      show.clicker.quiz.mc.results(dat=dat,qu=qu,part.ind = i, outputId = curId)
+    } else if (isTRUE(part$type=="numeric")) {
+      show.clicker.quiz.numeric.results(dat=dat,part.ind = i, qu=qu,outputId = curId)
+    }
+  }
   return()
 }
 
-show.clicker.quiz.sc.results = function(dat, qu,part = qu$parts[[1]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
+show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[part.ind]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
   restore.point("clicker.quiz.sc.results.ui")
+
+  dat = dat[dat$part.ind==part.ind,,drop=FALSE]
 
   choices = unlist(part$choices)
   has.mathjax = any(has.substr(choices,"\\("))
@@ -50,10 +65,10 @@ show.clicker.quiz.sc.results = function(dat, qu,part = qu$parts[[1]], show.sol=T
     # need random string to correctly rerender plot
     plotId = paste0(outputId,"_Plot_",random.string(nchar=8))
     ui = tagList(
+      HTML(part$question), p(paste0("(",nans," replies)")),
       div(style="height=14em",
         highchartOutput(plotId, height="14em")
-      ),
-      p(nans," replies.")
+      )
     )
     setUI(outputId,ui)
     dsetUI(outputId,ui)
@@ -79,13 +94,15 @@ show.clicker.quiz.sc.results = function(dat, qu,part = qu$parts[[1]], show.sol=T
 }
 
 
-show.clicker.quiz.mc.results = function(dat, qu,part = qu$parts[[1]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
+show.clicker.quiz.mc.results = function(dat, qu,part.ind = 1, part = qu$parts[[part.ind]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
   restore.point("clicker.quiz.mc.results.ui")
 
+  dat = dat[dat$part.ind==part.ind,,drop=FALSE]
   choices = unlist(part$choices)
 
-  sum = group_by(dat,answer) %>% summarize(yes=sum(checked),no=sum(!checked))
+  dat = transform.to.mc.data(dat, choices)
 
+  sum = group_by(dat,answer) %>% summarize(yes=sum(checked),no=sum(!checked))
 
   ind = match(choices,sum$answer)
   sum = sum[ind,]
@@ -119,12 +136,11 @@ show.clicker.quiz.mc.results = function(dat, qu,part = qu$parts[[1]], show.sol=T
   # need random string to correctly rerender plot
   plotId = paste0(outputId,"_Plot_",random.string(nchar=8))
   ui = tagList(
+    HTML(part$question), p(paste0("(",nans," replies)")),
     div(style="height=14em",
       highchartOutput(plotId, height="14em")
-    ),
-    p("Total: ",nans," replies."),
-    if (show.sol & !is.null(qu$explain.html))
-      HTML(qu$explain.html)
+    )
+    #p("Total: ",nans," replies.")
   )
   setUI(outputId,ui)
   dsetUI(outputId,ui)
@@ -135,8 +151,10 @@ show.clicker.quiz.mc.results = function(dat, qu,part = qu$parts[[1]], show.sol=T
 
 
 
-show.clicker.quiz.numeric.results = function(dat, qu,part = qu$parts[[1]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
+show.clicker.quiz.numeric.results = function(dat, qu,part.ind = 1, part = qu$parts[[part.ind]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
   restore.point("clicker.quiz.numeric.results.ui")
+
+  dat = dat[dat$part.ind==part.ind,,drop=FALSE]
   answer = as.numeric(part$answer)
   var = names(dat)[[NCOL(dat)]]
   vals = dat[[var]]
@@ -147,11 +165,10 @@ show.clicker.quiz.numeric.results = function(dat, qu,part = qu$parts[[1]], show.
   # need random string to correctly rerender plot
   plotId = paste0(outputId,"_Plot_",random.string(nchar=8))
   ui = tagList(
-    p("Results from ",NROW(dat)," replies:"),
+    HTML(part$question), p(paste0(if (show.sol) paste0("Correct solution: ", answer)," (",nans," replies)")),
     div(style="height=14em",
       highchartOutput(plotId, height="14em")
-    ),
-    if (show.sol) p("Correct solution: ", answer)
+    )
   )
   setUI(outputId,ui)
   dsetUI(outputId,ui)
@@ -243,7 +260,10 @@ normalize.clicker.tag = function(ct, clicker.tag) {
 
 # transform submission data into simpler format
 quiz.clicker.transform.sub.data = function(dat, ct) {
-  restore.point("transform.sub.data")
+  restore.point("quiz.clicker.transform.sub.data")
+  # don't transform yet
+  return(dat)
+
   if (isTRUE(ct$type=="quiz")) {
     part = ct$wid$parts[[1]]
     if (isTRUE(part$type=="mc")) {
@@ -260,8 +280,8 @@ transform.to.mc.data = function(dat, choices) {
   library(tidyr)
   mc = expand.grid(answer=choices,userid=unique(dat$userid))
   jd = suppressWarnings(left_join(mc, dat,by=c("userid","answer")))
-  jd$checked = !is.na(jd$submitTime)
+  jd$checked = !is.na(jd$submit.time)
 
-  jd = select(jd,submitTime,userid,answer,checked)
+  jd = select(jd,submit.time,userid,answer,checked)
   jd
 }

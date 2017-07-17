@@ -231,13 +231,27 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   ct = glob[["ct"]]
   tag = basename(ct$tag.dir)
 
-  vals = c(list(submitTime=Sys.time(),task.id=ct$task.id, tag=tag, userid=app$userid), as.list(values))
+  # Values is a list with length equal to
+  # the number of quiz parts
+  # For multiple choice quizes each
+  # list element is itself a list
+  # containing the checked answers
+
+  submit.time = Sys.time()
+  li = lapply(seq_along(values), function(i) {
+    answers = unlist(values[[i]])
+    answer.ind = match(answers, ct$wid$parts[[i]]$answer)
+    data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i, userid=app$userid, answer.ind=answer.ind, answer =  answers)
+  })
+  df = bind_rows(li)
 
   if (!file.exists(file.path(ct$task.dir, "colnames.csv")))
-    writeLines(paste0(names(vals), collapse=","),file.path(ct$task.dir,"colnames.csv"))
+    writeLines(paste0(colnames(df), collapse=","),file.path(ct$task.dir,"colnames.csv"))
 
+  # we write as a csv table for security reasons
+  # R binary files seem generaly more risky when loaded
   sub.file = file.path(ct$tag.dir, paste0(userid,".sub"))
-  write.table(as.data.frame(vals), file=sub.file, sep=",", row.names=FALSE, col.names= FALSE)
+  write.table(df, file=sub.file, sep=",", row.names=FALSE, col.names= FALSE)
   glob$glob[["ct"]]$num.sub = ct$num.sub+1
 
   ui= clicker.client.submitted.page(glob$page.params, answer=values$answer)

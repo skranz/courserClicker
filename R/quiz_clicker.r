@@ -30,8 +30,9 @@ quiz.clicker.server.show.results = function(ct, ...) {
   show.quiz.task.results(ct=ct,...)
 }
 
-quiz.clicker.parse = function(inner.txt,type="quiz",name="",id=paste0("quiz_",bi),args=NULL, bdf=NULL, bi=NULL, ps=get.ps(),opts = ps$opts,...) {
-  task.id = paste0(ps$name,"__",id)
+quiz.clicker.parse = function(inner.txt,type="quiz",name="",id= paste0("quiz_",args$name),args=NULL, bdf=NULL, bi=NULL, ps=get.ps(),opts = ps$opts,...) {
+
+  task.id = paste0(ps$name,"__",if(is.null(args[["name"]])) id else paste0("quiz_",args$name))
   restore.point("quiz.clicker.parse")
   whiskers =NULL
   if (isTRUE(opts$use.whiskers)) {
@@ -66,7 +67,13 @@ quiz.clicker.client.ui = function(qu, lang="en") {
     return(list(part.ui,hr))
   })
   if (!is.null(qu$checkBtnId)) {
-    ids = sapply(qu$parts, function(part) part$answerId)
+    ids = unlist(lapply(qu$parts, function(part) {
+      if (part$type == "grid_sc" | part$type == "grid_mc") {
+        return(paste0(part$answerId, seq_len(length(part$rows))))
+      }
+      part$answerId
+    }))
+
     sendLabel = clicker.client.sendBtnLabel(lang)
     pli = c(pli, list(submitButton(qu$checkBtnId,label = sendLabel,form.ids = ids),br()))
   }
@@ -88,6 +95,10 @@ quiz.clicker.client.part.ui = function(part) {
     answer = wellCheckboxGroupInput(part$answerId, label=NULL,part$choices)
   } else if (part$type=="sc") {
     answer = wellRadioButtons(part$answerId, label=NULL,part$choices, selected=NA)
+  } else if (part$type=="grid_sc" | part$type=="grid_mc") {
+    answer = part$ui[[2]]
+  } else {
+    stop("unknown quiz part$type ", part$type)
   }
   list(head,answer,uiOutput(part$resultId))
 }
@@ -95,8 +106,8 @@ quiz.clicker.client.part.ui = function(part) {
 quiz.clicker.client.init.handlers = function(ct=NULL,qu=ct$wid){
   restore.point("quiz.clicker.client.init.handlers")
   buttonHandler(qu$checkBtnId, function(formValues,...) {
-    answer = formValues[[1]]
-    clicker.client.submit(values=list(answer=answer))
+    restore.point("clicker.click.send.btn")
+    clicker.client.submit(values=formValues)
   })
 }
 

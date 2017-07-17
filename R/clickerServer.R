@@ -5,7 +5,7 @@ examples.click.server = function() {
 
 }
 
-#
+
 # clickerServerApp = function(clicker.dir, template.dir=file.path(clicker.dir, "templates"), userid="default") {
 #   restore.point("clickerServerApp")
 #
