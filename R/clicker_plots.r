@@ -59,6 +59,7 @@ relative.deviation.breaks = function(size=c("5","10","fine")[1]) {
       "s >100","s 100-25","s 25-5","s 5-1","s 100%-25%","s 25%-5%","s 5%-1%",
      "roughly right",
       "1%-5%","5%-25%", "l 25%-100%","1-5","5-25","25-100",">100")
+
     colors= clicker.bar.color(c(rep(FALSE,6),2,TRUE,2, rep(FALSE,6)))
 
   } else if (size=="10") {

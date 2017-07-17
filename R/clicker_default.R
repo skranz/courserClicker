@@ -35,6 +35,13 @@ clicker.server.show.results = function(...,ct=NULL,wid=ct$wid,Wid=get.Widget(wid
   }
 
   call.fun(Wid$server$show.results,ct=ct, wid=wid,...)
+
+  if (!is.null(wid$explain.html)) {
+    ns = NS(wid$task.id)
+    ui = slimCollapsePanel("Explanation", HTML(wid$explain.html))
+    setUI(ns("quizExplainUI"),ui)
+    dsetUI(ns("quizExplainUI"),ui)
+  }
 }
 
 
@@ -121,7 +128,8 @@ default.clicker.server.ui.fun = function(wid=NULL,task.id=wid$task.id,above.ui=w
         uiOutput(ns("resultsUI")),
         tagList(div(class="StopClickPropagation",
           selectInput(ns("resultsRunSelect"), label="Results of run", choices=list("latest"="latest", "all"="all"),multiple=FALSE)
-        ))
+        )),
+        uiOutput(ns("quizExplainUI"))
       )
     )
   )

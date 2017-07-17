@@ -1,6 +1,6 @@
 example.wellRadioButtons = function() {
   app = eventsApp()
-  app$ui = bootstrapPage(
+  app$ui = fluidPage(
     wellRadioButtons("rb",NULL,1:4),
     wellCheckboxGroupInput("cb",NULL,1:3)
   )

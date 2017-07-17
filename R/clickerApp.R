@@ -41,14 +41,14 @@ clickerClientApp = function(opts=clicker.client.opts()) {
 
   # list of reactive nounces that monitor updates
   # for given courses
-  glob$update.task.rv = reactiveValues(nonce=0)
+  glob$task.update.rv = reactiveValues(nonce=0)
 
   obs = observe({
     clicker.update.task(clicker.dir = clicker.dir,glob = glob)
   })
   set.global.observer("myobs",obs=obs)
 
-  app$ui = bootstrapPage(
+  app$ui = fluidPage(
     uiOutput("titleUI"),
     uiOutput("mainUI")
   )
@@ -121,7 +121,7 @@ clicker.client.opts = function(
   use.login.db=TRUE,
   app.url=NULL, clicker.app.url = app.url,
   init.userid="", init.password="", init.code="",
-  app.title="RClicker",
+  app.title="Quiz",
   email.domain = NULL, check.email.fun = NULL,
   email.text.fun=default.email.text.fun,
   smtp = NULL,
@@ -151,7 +151,7 @@ clicker.client.start.task.observer = function(tok=app$glob$default.token,app=get
 
   glob=app$glob
   app$task.obs = observe({
-    glob$update.task.rv$nonce
+    glob$task.update.rv$nonce
     restore.point("app.task.observer")
     clicker.update.client.task()
     cat("task.nonce changed...")
@@ -185,22 +185,27 @@ clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=
   cat(".")
   #cat("\nI am observed...", sample.int(1000,1))
 
-  files = list.files(file.path(clicker.dir, "running_task"),full.names = TRUE)
+  files = list.files(file.path(clicker.dir, "running_task"),full.names = FALSE)
 
   files = setdiff(files, glob$running.task.file)
   if (length(files)==0) {
     invalidateLater(millis)
     return()
   }
-  # sort filest by date, newest first
-  files = files[order(file.mtime(file.path(clicker.dir,"tasks",files)))]
+
+  long.files = paste0(clicker.dir, "/running_task", files)
+
+  # remove older task files
   if (length(files)>1) {
-    file.remove(files[-1])
+    ord = order(file.mtime(long.files))
+    files = files[ord]
+    long.files = long.files[ord]
+    file.remove(long.files[-1])
   }
 
   restore.point("clicker.update.task.2")
 
-  file = basename(files[1])
+  file = files[1]
   task.id = str.left.of(file,"---")
 
   task.file = file.path(clicker.dir,"tasks",task.id,"ct.Rds")

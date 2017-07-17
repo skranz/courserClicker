@@ -138,9 +138,45 @@ show.clicker.quiz.mc.results = function(dat, qu,part = qu$parts[[1]], show.sol=T
 show.clicker.quiz.numeric.results = function(dat, qu,part = qu$parts[[1]], show.sol=TRUE, outputId = NULL, opts=NULL,do.plot=TRUE, app=getApp()) {
   restore.point("clicker.quiz.numeric.results.ui")
   answer = as.numeric(part$answer)
-  var = names(dat)[[3]]
-  val = dat[[var]]
+  var = names(dat)[[NCOL(dat)]]
+  vals = dat[[var]]
 
+  #plot = clicker.numeric.relative.deviation.plot(vals, answer)
+  plot = clicker.numeric.quantile.plot(vals, answer)
+
+  # need random string to correctly rerender plot
+  plotId = paste0(outputId,"_Plot_",random.string(nchar=8))
+  ui = tagList(
+    p("Results from ",NROW(dat)," replies:"),
+    div(style="height=14em",
+      highchartOutput(plotId, height="14em")
+    ),
+    if (show.sol) p("Correct solution: ", answer)
+  )
+  setUI(outputId,ui)
+  dsetUI(outputId,ui)
+  app$session$output[[plotId]] = renderHighchart(plot)
+
+
+  invisible(ui)
+}
+
+
+clicker.numeric.quantile.plot = function(vals, solution) {
+  vals = sort(vals)
+  index = seq_along(vals)
+  hc <- highchart() %>%
+    hc_chart(zoomType = "y") %>%
+    hc_yAxis(title = list(text = "Answer")) %>%
+    hc_xAxis(categories = index, title = list(text = "Index of submitted answer (sorted)")) %>%
+    hc_add_series(name="Correct Solution",data = rep(solution, length(vals))) %>%
+    hc_add_series(name = "Answers", data = vals)
+  hc
+
+}
+
+clicker.numeric.relative.deviation.plot = function(vals, solution) {
+  answer = solution; val = vals
   pos.dev = (val/answer-1)
   neg.dev = (answer/val-1)
   neg = neg.dev > pos.dev
@@ -179,23 +215,8 @@ show.clicker.quiz.numeric.results = function(dat, qu,part = qu$parts[[1]], show.
   hc_xAxis(categories = lab) %>%
   hc_add_series(data = counts,name="Counts",showInLegend=FALSE)
 
-  # need random string to correctly rerender plot
-  plotId = paste0(outputId,"_Plot_",random.string(nchar=8))
-  ui = tagList(
-    p("Results from ",NROW(dat)," replies:"),
-    div(style="height=14em",
-      highchartOutput(plotId, height="14em")
-    ),
-    if (show.sol) p("Correct answer: ", answer)
-  )
-  setUI(outputId,ui)
-  dsetUI(outputId,ui)
-  app$session$output[[plotId]] = renderHighchart(plot)
 
-
-  invisible(ui)
 }
-
 
 normalize.clicker.tag = function(ct, clicker.tag) {
   restore.point("normalize.clicker.tag")
