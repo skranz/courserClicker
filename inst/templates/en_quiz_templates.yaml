@@ -1,0 +1,13 @@
+de_sc_abcd:
+  var: Antwort
+  question: Wählen Sie die korrekte Antwort
+  sc:
+    - a
+    - b
+    - c
+    - d
+
+de_mc_abcd:
+  var: [a,b,c,d]
+  question: Wählen Sie alle korrekten Antworten
+  mc: [a,b,c,d]

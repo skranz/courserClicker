@@ -85,7 +85,7 @@ quiz.clicker.client.part.ui = function(part) {
   restore.point("quiz.clicker.client.part.ui")
 
   head = list(
-    HTML(part$question)
+    HTML(part$question.html)
   )
   if (part$type=="numeric") {
     answer = textInput(part$answerId, label = NULL,value = "")

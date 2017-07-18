@@ -1,0 +1,19 @@
+sc_abcd:
+  question: Wählen Sie die korrekte Antwort
+  sc:
+    - a
+    - b
+    - c
+    - d
+
+sc_ja_nein:
+  question: Wählen Sie die korrekte Antwort
+  sc:
+    - Ja
+    - Nein
+    - Nicht genau entscheidbar
+
+
+mc_abcd:
+  question: Wählen Sie alle korrekten Antworten
+  mc: [a,b,c,d]

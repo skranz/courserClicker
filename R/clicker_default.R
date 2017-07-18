@@ -37,7 +37,7 @@ clicker.server.show.results = function(...,ct=NULL,wid=ct$wid,Wid=get.Widget(wid
   call.fun(Wid$server$show.results,ct=ct, wid=wid,...)
 
   if (!is.null(wid$explain.html)) {
-    ns = NS(wid$task.id)
+    ns = first.non.null(wid[["ns"]],NS(wid$task.id))
     ui = slimCollapsePanel("Explanation", HTML(wid$explain.html))
     setUI(ns("quizExplainUI"),ui)
     dsetUI(ns("quizExplainUI"),ui)
@@ -68,7 +68,7 @@ clicker.server.init.handlers = function(...,wid,Wid=get.Widget(wid$type)) {
 default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),opts=ps$opts, Wid = get.Widget(wid$type),...) {
   restore.point("default.clicker.server.init.handlers")
 
-  ns = NS(wid$task.id)
+  ns = first.non.null(wid[["ns"]],NS(wid$task.id))
   if (!isTRUE(opts$use.clicker)) {
     cat("\nDon't use clicker.\n")
     return()
@@ -139,7 +139,7 @@ default.clicker.server.ui.fun = function(wid=NULL,task.id=wid$task.id,above.ui=w
 default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs(),...) {
   restore.point("default.clicker.server.stop.ct")
 
-  ns = NS(wid$task.id)
+  ns = first.non.null(wid[["ns"]],NS(wid$task.id))
   stop.in.sec = as.integer(getInputValue(ns("stopClickerBtn")))
 
   restore.point("default.clicker.server.stop.task")
@@ -151,7 +151,7 @@ default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs
 default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), clicker.dir = opts$clicker.dir, cs=app$cs) {
   restore.point("default.clicker.server.start.ct")
 
-  ns = NS(wid$task.id)
+  ns = first.non.null(wid[["ns"]],NS(wid$task.id))
 
   ct = clicker.server.init.ct(wid=wid,Wid=Wid, clicker.dir=clicker.dir, clicker.tag=clicker.tag)
 
