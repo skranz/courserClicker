@@ -9,11 +9,11 @@ get.server.cs = function(app=getApp()) {
 }
 
 # current clicker task for a certain task.id
-get.server.ct = function(cs=app$cs, app=getApp()) {
+get.server.ct = function(cs=get.server.cs(), app=getApp()) {
   cs$ct
 }
 
-set.server.ct = function(ct,cs=app$cs, app=getApp()) {
+set.server.ct = function(ct,cs=get.server.cs(), app=getApp()) {
   cs$ct = ct
 }
 
@@ -37,7 +37,7 @@ clicker.server.show.results = function(...,ct=NULL,wid=ct$wid,Wid=get.Widget(wid
   call.fun(Wid$server$show.results,ct=ct, wid=wid,...)
 
   if (!is.null(wid$explain.html)) {
-    ns = first.non.null(wid[["ns"]],NS(wid$task.id))
+    ns = clicker.wid.ns(wid)
     ui = slimCollapsePanel("Explanation", HTML(wid$explain.html))
     setUI(ns("quizExplainUI"),ui)
     dsetUI(ns("quizExplainUI"),ui)
@@ -68,7 +68,7 @@ clicker.server.init.handlers = function(...,wid,Wid=get.Widget(wid$type)) {
 default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),opts=ps$opts, Wid = get.Widget(wid$type),...) {
   restore.point("default.clicker.server.init.handlers")
 
-  ns = first.non.null(wid[["ns"]],NS(wid$task.id))
+  ns = clicker.wid.ns(wid)
   if (!isTRUE(opts$use.clicker)) {
     cat("\nDon't use clicker.\n")
     return()
@@ -90,14 +90,13 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
   })
   buttonHandler(ns("stopClickerBtn"),function(...) {
     restore.point("stopClickerBtn")
-    clicker.server.stop.ct(wid=wid, ct=get.server.ct())
+    clicker.server.stop.ct(wid=wid, ct=get.server.ct(),...)
   })
 
   clicker.server.update.result.tags(wid=wid)
 
   selectChangeHandler(id = ns("resultsRunSelect"),fun=function(id,value,...,app=getApp()) {
     args = list(...)
-    #value = getInputValue(id)
     restore.point("resultsRunSelectChange")
 
     ct = wid$ct
@@ -112,13 +111,16 @@ default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),op
   })
 }
 
-default.clicker.server.ui.fun = function(wid=NULL,task.id=wid$task.id,above.ui=wid$ui,ns=NS(task.id), stop.in=5) {
+default.clicker.server.ui.fun = function(wid=NULL,task.id=wid$task.id,above.ui=wid$ui,ns=clicker.wid.ns(wid)
+, stop.in=5) {
+
+
   tagList(
     above.ui,
     HTML("<table><tr><td>"),
     smallButton(ns("startClickerBtn"),label="Start", extra.style="margin-bottom: 2px;"),
     HTML("</td><td>"),
-    smallButton(ns("stopClickerBtn"),label="Stop in ",extra.style="margin-bottom: 2px;"),
+    smallButton(ns("stopClickerBtn"),label="Stop in ",extra.style="margin-bottom: 2px;", form.ids=ns("stopInInput")),
     HTML("</td><td>"),
     tags$input(id = ns("stopInInput"),type = "text", class = "form-control", value = stop.in,style="width: 4em; padding-left: 10px; padding-right: 5px; padding-top: 0; padding-bottom: 0; margin-left: 5px; margin-top:0; margin-bottom: 0; height: 100%;"),
     HTML("</td></tr></table>"),
@@ -136,14 +138,13 @@ default.clicker.server.ui.fun = function(wid=NULL,task.id=wid$task.id,above.ui=w
 
 }
 
-default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs(),...) {
+default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs(),formValues=list(),...) {
   restore.point("default.clicker.server.stop.ct")
 
-  ns = first.non.null(wid[["ns"]],NS(wid$task.id))
-  stop.in.sec = as.integer(getInputValue(ns("stopClickerBtn")))
+  ns = clicker.wid.ns(wid)
+  stop.in.sec = as.integer(formValues[[ns("stopInInput")]])
 
-  restore.point("default.clicker.server.stop.task")
-  if (is.na(stop.in.sec)) stop.in.sec=3
+  if (length(stop.in.sec)==0 | isTRUE(is.na(stop.in.sec))) stop.in.sec=3
   cs$stop.time = as.integer(Sys.time()) + stop.in.sec
 }
 
@@ -151,7 +152,7 @@ default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs
 default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), clicker.dir = opts$clicker.dir, cs=app$cs) {
   restore.point("default.clicker.server.start.ct")
 
-  ns = first.non.null(wid[["ns"]],NS(wid$task.id))
+  ns = clicker.wid.ns(wid)
 
   ct = clicker.server.init.ct(wid=wid,Wid=Wid, clicker.dir=clicker.dir, clicker.tag=clicker.tag)
 
@@ -206,6 +207,8 @@ default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), o
       clicker.server.show.results(wid=wid, ct=ct, Wid=Wid)
     }
   })
+
+  ct
 }
 
 
@@ -229,7 +232,7 @@ default.clicker.server.init.ct = function(wid, clicker.dir, clicker.tag=NULL,Wid
 clicker.server.update.result.tags = function(task.id = wid$task.id,selected="none",clicker.dir=opts$clicker.dir,  app=getApp(), opts=rt.opts(),wid=NULL) {
   restore.point("clicker.server.update.result.tags")
 
-  ns = NS(task.id)
+  ns = clicker.wid.ns(wid)
 
   tags = get.clicker.tags(clicker.dir=clicker.dir, task.id=task.id)
 
@@ -239,4 +242,8 @@ clicker.server.update.result.tags = function(task.id = wid$task.id,selected="non
   updateSelectizeInput(app$session,inputId = ns("resultsRunSelect"), choices=tags.li,selected = selected)
 }
 
-
+clicker.wid.ns = function(wid, task.id=wid$task.id) {
+  restore.point("clicker.wid.ns")
+  ns = first.non.null(wid[["ns"]],NS(wid$task.id))
+  ns
+}

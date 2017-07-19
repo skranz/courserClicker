@@ -1,4 +1,4 @@
-show.quiz.task.results = function(ct, app=getApp(),outputId = NS(ct$wid$id,"resultsUI"),clicker.tag=ct$clicker.tag,...) {
+show.quiz.task.results = function(ct, app=getApp(),outputId = ns("resultsUI"),clicker.tag=ct$clicker.tag,ns=clicker.wid.ns(ct$wid,task.id = ct$task.id),...) {
   restore.point("show.quiz.task.results")
   dat = load.sub.data(ct=ct, clicker.tag=clicker.tag)
 

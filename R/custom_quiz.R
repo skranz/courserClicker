@@ -41,10 +41,15 @@ init.custom.clicker.quiz = function(clicker.dir, templ.dir = if (!is.null(clicke
 
 custom.clicker.templ.click = function(formValues,cc, ...) {
   restore.point("templBtnClick")
+  ns = cc$ns
   templ.name = formValues[[1]]
   cc$qu = qu = cc$templates[[ templ.name ]]
   cc$mode = "template"
-  qu$name = random.string(1,10)
+
+  task.dir = file.path(cc$clicker.dir,"tasks")
+  cfiles = list.files(task.dir,glob2rx("custom__*"), include.dirs=TRUE)
+
+  qu$name = paste0(templ.name,"_", length(cfiles)+1)
   ui = tagList(
     enter.sc.mc.quiz.ui(qu=qu),
     custom.quiz.clicker.server.ui.fun(cc=cc)
@@ -54,6 +59,7 @@ custom.clicker.templ.click = function(formValues,cc, ...) {
 
 custom.clicker.old.quiz.click = function(formValues,cc, ...) {
   restore.point("old.quiz.click")
+  ns = cc$ns
   task.id = paste0("custom__", formValues[[ns("oldQuiz")]])
   task.file = file.path(cc$clicker.dir,"tasks", task.id, "ct.Rds")
   ct = readRDS(task.file)
@@ -73,6 +79,9 @@ custom.clicker.start.click = function(formValues,cc, ...) {
   if (cc$mode == "template") {
     cc$wid = parse.custom.quiz.widget(formValues=formValues, cc=cc)
     clicker.server.start.ct(wid=cc$wid)
+    cc$ct = get.server.ct()
+    cc$ct$wid$ns = cc$ns
+    cc$ct$wid$task.id = cc$ct$task.id
   } else {
     cc$wid = cc$ct$wid
     cc$wid$ns = cc$ns
@@ -82,11 +91,12 @@ custom.clicker.start.click = function(formValues,cc, ...) {
 
 custom.clicker.stop.click = function(formValues,cc, ...) {
   restore.point("custom.clicker.stop.click")
-  clicker.server.stop.ct(wid=cc$wid, ct=get.server.ct())
+  clicker.server.stop.ct(wid=cc$wid, ct=get.server.ct(),formValues=formValues,...)
 }
 
 custom.clicker.quiz.init.handlers = function(cc) {
   ns = cc$ns
+  clicker.dir = cc$clicker.dir
   buttonHandler(ns("templBtn"), function(...) {
     custom.clicker.templ.click(..., cc=cc)
   })
@@ -101,6 +111,23 @@ custom.clicker.quiz.init.handlers = function(cc) {
   buttonHandler(ns("stopClickerBtn"), function(...) {
     custom.clicker.stop.click(..., cc=cc)
   })
+
+
+  selectChangeHandler(id = ns("resultsRunSelect"),fun=function(id,value,...,app=getApp()) {
+    args = list(...)
+    ct = cc$ct
+    restore.point("customResultsRunSelectChange")
+
+    ct$clicker.tag = value
+    ct$clicker.dir = clicker.dir
+    ct$task.dir = file.path(clicker.dir, "tasks", ct$task.id)
+    ct$tag.dir = file.path(ct$task.dir,"tags",ct$clicker.tag)
+
+    clicker.server.show.results(wid = ct$wid, ct=ct, clicker.tag=value)
+
+    cat("\nresultsSelectClick")
+  })
+
 }
 
 custom.clicker.quiz.ui= function(cc) {
@@ -174,7 +201,7 @@ enter.sc.mc.quiz.ui = function(qu=list(name="",parts=list(list(question="Enter y
 
 
 parse.custom.quiz.widget = function(formValues, cc,...) {
-  restore.point("parse.custom.quiu.widget")
+  restore.point("parse.custom.quiz.widget")
   ns = cc$ns
   qu = cc$qu
   part=qu$parts[[1]]
@@ -182,17 +209,13 @@ parse.custom.quiz.widget = function(formValues, cc,...) {
   vals=formValues
   choice.fields = ns(paste0("choice_",seq_along(part$choices)))
   choices = unlist(vals[choice.fields])
-  solChoice = as.numeric(str.trim( vals[[ns("solChoice")]] ))
-  if (is.na(solChoice)) {
-    answer = ""
-  } else {
-    answer = choices[[solChoice]]
-  }
-
+  answer.ind = list.string.to.vector(vals[[ns("solChoice")]], class="integer")
+  if (is.na(answer.ind)) answer.ind = c()
 
   new.qu = list(
     name = vals[[ns("name")]],
-    answer = answer
+    question = vals[[ns("question")]],
+    answer.ind = answer.ind
   )
   # Works for sc and mc quiz
   if (part$type == "sc" | part$type == "mc")
@@ -230,7 +253,7 @@ custom.quiz.clicker.server.ui.fun = function(cc=NULL, qu=cc$qu,above.ui=NULL,ns=
     smallButton(ns("updateClickerBtn"),label="Update", extra.style="margin-bottom: 2px;", form.ids=form.ids),
     smallButton(ns("startClickerBtn"),label="Start", extra.style="margin-bottom: 2px;", form.ids=form.ids),
     HTML("</td><td>"),
-    smallButton(ns("stopClickerBtn"),label="Stop in ",extra.style="margin-bottom: 2px;"),
+    smallButton(ns("stopClickerBtn"),label="Stop in ",extra.style="margin-bottom: 2px;",form.ids=ns("stopInInput")),
     HTML("</td><td>"),
     tags$input(id = ns("stopInInput"),type = "text", class = "form-control", value = stop.in,style="width: 4em; padding-left: 10px; padding-right: 5px; padding-top: 0; padding-bottom: 0; margin-left: 5px; margin-top:0; margin-bottom: 0; height: 100%;"),
     HTML("</td></tr></table>"),
