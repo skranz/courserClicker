@@ -44,6 +44,8 @@ custom.clicker.templ.click = function(formValues,cc, ...) {
   ns = cc$ns
   templ.name = formValues[[1]]
   cc$qu = qu = cc$templates[[ templ.name ]]
+
+
   cc$mode = "template"
 
   task.dir = file.path(cc$clicker.dir,"tasks")
@@ -55,6 +57,7 @@ custom.clicker.templ.click = function(formValues,cc, ...) {
     custom.quiz.clicker.server.ui.fun(cc=cc)
   )
   setUI(ns("quizUI"), ui)
+  dsetUI(ns("quizUI"), ui)
 }
 
 custom.clicker.old.quiz.click = function(formValues,cc, ...) {
@@ -63,13 +66,19 @@ custom.clicker.old.quiz.click = function(formValues,cc, ...) {
   task.id = paste0("custom__", formValues[[ns("oldQuiz")]])
   task.file = file.path(cc$clicker.dir,"tasks", task.id, "ct.Rds")
   ct = readRDS(task.file)
-  cc$ct = ct
-  cc$mode = "oldQuiz"
+
+  wid = ct$wid
+
+  cc$qu = qu = wid
+  cc$mode = "template"
+
+  #qu$name = paste0(templ.name,"_", length(cfiles)+1)
   ui = tagList(
-    ct$wid$ui,
-    default.clicker.server.ui.fun(wid=ct$wid, task.id=task.id)
+    enter.sc.mc.quiz.ui(qu=qu),
+    custom.quiz.clicker.server.ui.fun(cc=cc)
   )
   setUI(ns("quizUI"), ui)
+  dsetUI(ns("quizUI"), ui)
 
 }
 
@@ -184,6 +193,9 @@ enter.sc.mc.quiz.ui = function(qu=list(name="",parts=list(list(question="Enter y
 
   restore.point("enter.sc.mc.quiz.ui")
   part = qu$parts[[1]]
+
+  answer.ind = first.non.null(part[["answer_ind"]],"")
+
   typeLabels = c(sc="single choice",mc="multiple choice",numeric="free number")
   tagList(
     div(style="display: flex",
@@ -195,7 +207,7 @@ enter.sc.mc.quiz.ui = function(qu=list(name="",parts=list(list(question="Enter y
         textInput(ns(paste0("choice_",i)),paste0("Choice ",i),part$choices[[i]])
       })
     ),
-    passwordInput(ns("solChoice"),paste0("Solution (",typeLabels[part$type],")"),"")
+    passwordInput(ns("answer_ind"),label=paste0("Solution (",typeLabels[part$type],")"),value=answer.ind)
   )
 }
 
@@ -209,7 +221,7 @@ parse.custom.quiz.widget = function(formValues, cc,...) {
   vals=formValues
   choice.fields = ns(paste0("choice_",seq_along(part$choices)))
   choices = unlist(vals[choice.fields])
-  answer.ind = list.string.to.vector(vals[[ns("solChoice")]], class="integer")
+  answer.ind = list.string.to.vector(vals[[ns("answer_ind")]], class="integer")
   if (is.na(answer.ind)) answer.ind = c()
 
   new.qu = list(
@@ -240,7 +252,7 @@ parse.custom.quiz.widget = function(formValues, cc,...) {
 
 custom.clicker.quiz.form.ids = function(part=qu$parts[[1]],qu=cc$qu, cc=NULL) {
   ns = cc$ns
-  c(ns("name"),ns("question"),ns(paste0("choice_",seq_along(part$choices))),ns("solChoice"))
+  c(ns("name"),ns("question"),ns(paste0("choice_",seq_along(part$choices))),ns("answer_ind"))
 }
 
 custom.quiz.clicker.server.ui.fun = function(cc=NULL, qu=cc$qu,above.ui=NULL,ns=NS("CustomClickerQuiz"), stop.in=5) {
