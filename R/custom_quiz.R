@@ -85,18 +85,23 @@ custom.clicker.old.quiz.click = function(formValues,cc, ...) {
 
 custom.clicker.start.click = function(formValues,cc, ...) {
   restore.point("custom.clicker.start.click")
-  if (cc$mode == "template") {
-    cc$wid = parse.custom.quiz.widget(formValues=formValues, cc=cc)
-    clicker.server.start.ct(wid=cc$wid)
-    cc$ct = get.server.ct()
-    cc$ct$wid$ns = cc$ns
-    cc$ct$wid$task.id = cc$ct$task.id
-  } else {
-    cc$wid = cc$ct$wid
-    cc$wid$ns = cc$ns
-    clicker.server.start.ct(wid=cc$wid)
-  }
+  cc$wid = parse.custom.quiz.widget(formValues=formValues, cc=cc)
+  clicker.server.start.ct(wid=cc$wid)
+  cc$ct = get.server.ct()
+  cc$ct$wid$ns = cc$ns
+  cc$ct$wid$task.id = cc$ct$task.id
 }
+
+
+custom.clicker.update.click = function(formValues,cc, ...) {
+  restore.point("custom.clicker.update.click")
+  cc$wid = parse.custom.quiz.widget(formValues=formValues, cc=cc)
+  clicker.server.start.ct(wid=cc$wid, just.update.ct=TRUE)
+  cc$ct = get.server.ct()
+  cc$ct$wid$ns = cc$ns
+  cc$ct$wid$task.id = cc$ct$task.id
+}
+
 
 custom.clicker.stop.click = function(formValues,cc, ...) {
   restore.point("custom.clicker.stop.click")
@@ -116,6 +121,11 @@ custom.clicker.quiz.init.handlers = function(cc) {
   buttonHandler(ns("startClickerBtn"), function(...) {
     custom.clicker.start.click(..., cc=cc)
   })
+
+  buttonHandler(ns("updateClickerBtn"), function(...) {
+    custom.clicker.update.click(..., cc=cc)
+  })
+
 
   buttonHandler(ns("stopClickerBtn"), function(...) {
     custom.clicker.stop.click(..., cc=cc)
@@ -222,7 +232,7 @@ parse.custom.quiz.widget = function(formValues, cc,...) {
   choice.fields = ns(paste0("choice_",seq_along(part$choices)))
   choices = unlist(vals[choice.fields])
   answer.ind = list.string.to.vector(vals[[ns("answer_ind")]], class="integer")
-  if (is.na(answer.ind)) answer.ind = c()
+  answer.ind = as.integer(na.omit(answer.ind))
 
   new.qu = list(
     name = vals[[ns("name")]],

@@ -149,7 +149,7 @@ default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs
 }
 
 
-default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), clicker.dir = opts$clicker.dir, cs=app$cs) {
+default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), clicker.dir = opts$clicker.dir, cs=app$cs, just.update.ct=FALSE) {
   restore.point("default.clicker.server.start.ct")
 
   ns = clicker.wid.ns(wid)
@@ -164,6 +164,8 @@ default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), o
   ct = as.environment(ct)
   # set current clicker task
   set.server.ct(ct=ct)
+
+  if (just.update.ct) return(ct)
 
   # start task observer
   cs = get.server.cs()
