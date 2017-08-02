@@ -17,15 +17,6 @@ clicker.client.wait.page =function(params=app$glob$page.params, app=getApp()) {
 }
 
 
-clicker.client.submitted.page =function(params=app$glob$page.params, answer, app=getApp()) {
-  restore.point("clicker.client.submited.page")
-  p = params
-  armd::with.mathjax(tagList(
-    p(paste0(p$answerLab," ", answer)),
-    p(p$wait)
-  ))
-}
-
 
 default.clicker.pages.params = function(lang="en") {
   restore.point("default.clicker.pages.params")
@@ -33,17 +24,18 @@ default.clicker.pages.params = function(lang="en") {
     mark_utf8(list(
       title="Vorlesungsquiz",
       sendLabel="Absenden",
-      wait="Bitte warten Sie, bis das nächste Quiz gestartet wird.",
-      answerLab="Sie haben folgende Antwort(en) gewählt:",
-      solutionLab="Richtige Lösung:"
+      wait = "Bitte warten Sie, bis das nächste Quiz gestartet wird.",
+      submitted="Sie haben Ihre Antwort abgeschickt. Bitte warten Sie, bis das nächste Quiz gestartet wird.",
+      timeout="Leider ist die Zeit abgelaufen um eine Antwort abzusenden.  Bitte warten Sie, bis das nächste Quiz gestartet wird."
     ))
   } else {
    list(
       title="Lecture Quiz",
       sendLabel="Send",
       wait="Please wait until the next quiz starts.",
-      answerLab="You have entered the following answer(s):",
-      solutionLab="Correct solution:"
+      submitted="You have submitted your answer. Please wait until the next quiz starts.",
+      timeout="Sorry, but your time to submit an answer has run out.  Please wait until the next quiz starts."
+
     )
 
   }

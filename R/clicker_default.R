@@ -1,4 +1,12 @@
 
+get.clicker.Widget = function(type="quiz") {
+  if (type == "quiz") {
+    return(courserClicker::rtutor.widget.quiz())
+  }
+  stop(paste0("clicker.widget of type ", type, " not yet implemented."))
+
+}
+
 get.server.cs = function(app=getApp()) {
   cs = app[["cs"]]
   if (is.null(cs)) {
@@ -17,18 +25,18 @@ set.server.ct = function(ct,cs=get.server.cs(), app=getApp()) {
   cs$ct = ct
 }
 
-clicker.server.ui.fun = function(...,wid,Wid=get.Widget(wid$type)) {
+clicker.server.ui.fun = function(...,wid,Wid=get.clicker.Widget(wid$type)) {
   fun = first.non.null(Wid$server$ui.fun,default.clicker.server.ui.fun)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
-clicker.server.init.ct = function(...,wid,Wid=get.Widget(wid$type)) {
+clicker.server.init.ct = function(...,wid,Wid=get.clicker.Widget(wid$type)) {
   fun = first.non.null(Wid$server$init.ct,default.clicker.server.init.ct)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
 
-clicker.server.show.results = function(...,ct=NULL,wid=ct$wid,Wid=get.Widget(wid$type)) {
+clicker.server.show.results = function(...,ct=NULL,wid=ct$wid,Wid=get.clicker.Widget(wid$type)) {
   restore.point("clicker.server.show.results")
   if (is.null(Wid$server$show.results)) {
     stop(paste0("Your clicker widget ", wid$type," has not implemented the function server$show.results!"))
@@ -37,7 +45,7 @@ clicker.server.show.results = function(...,ct=NULL,wid=ct$wid,Wid=get.Widget(wid
   call.fun(Wid$server$show.results,ct=ct, wid=wid,...)
 
   if (!is.null(wid$explain.html)) {
-    ns = clicker.wid.ns(wid)
+    ns = clicker.wid.ns(wid=wid, ct=ct)
     ui = slimCollapsePanel("Explanation", HTML(wid$explain.html))
     setUI(ns("quizExplainUI"),ui)
     dsetUI(ns("quizExplainUI"),ui)
@@ -45,18 +53,18 @@ clicker.server.show.results = function(...,ct=NULL,wid=ct$wid,Wid=get.Widget(wid
 }
 
 
-clicker.server.start.ct = function(...,wid,Wid=get.Widget(wid$type)) {
+clicker.server.start.ct = function(...,wid,Wid=get.clicker.Widget(wid$type)) {
   fun = first.non.null(Wid$server$start.ct,default.clicker.server.start.ct)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
-clicker.server.stop.ct = function(...,wid,Wid=get.Widget(wid$type)) {
+clicker.server.stop.ct = function(...,wid,Wid=get.clicker.Widget(wid$type)) {
   fun = first.non.null(Wid$server$stop.ct,default.clicker.server.stop.ct)
   call.fun(fun,wid=wid, Wid=Wid,...)
 }
 
 
-clicker.server.init.handlers = function(...,wid,Wid=get.Widget(wid$type)) {
+clicker.server.init.handlers = function(...,wid,Wid=get.clicker.Widget(wid$type)) {
   restore.point("clicker.server.init.handlers")
 
   fun = first.non.null(Wid$server$init.handler,default.clicker.server.init.handlers)
@@ -65,7 +73,7 @@ clicker.server.init.handlers = function(...,wid,Wid=get.Widget(wid$type)) {
 
 
 
-default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),opts=ps$opts, Wid = get.Widget(wid$type),...) {
+default.clicker.server.init.handlers = function(wid,ps=get.ps(), app=getApp(),opts=ps$opts, Wid = get.clicker.Widget(wid$type),...) {
   restore.point("default.clicker.server.init.handlers")
 
   ns = clicker.wid.ns(wid)
@@ -149,7 +157,7 @@ default.clicker.server.stop.ct = function(wid,clicker.tag=NULL, cs=get.server.cs
 }
 
 
-default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.Widget(wid$type), clicker.dir = opts$clicker.dir, cs=app$cs, just.update.ct=FALSE) {
+default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), opts = rt.opts(), Wid = get.clicker.Widget(wid$type), clicker.dir = opts$clicker.dir, cs=app$cs, just.update.ct=FALSE) {
   restore.point("default.clicker.server.start.ct")
 
   ns = clicker.wid.ns(wid)
@@ -205,6 +213,7 @@ default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), o
       invalidateLater(1000)
     } else {
       setUI(ns("numSubUI"),"")
+      clicker.remove.running.task(ct=ct)
       clicker.server.update.result.tags(task.id=ct$task.id,clicker.dir=ct$clicker.dir, selected = "latest")
       clicker.server.show.results(wid=wid, ct=ct, Wid=Wid)
     }
@@ -214,7 +223,7 @@ default.clicker.server.start.ct = function(wid,clicker.tag=NULL, app=getApp(), o
 }
 
 
-default.clicker.server.init.ct = function(wid, clicker.dir, clicker.tag=NULL,Wid = get.Widget(wid$type), opts=rt.opts(),...) {
+default.clicker.server.init.ct = function(wid, clicker.dir, clicker.tag=NULL,Wid = get.clicker.Widget(wid$type), opts=rt.opts(),...) {
   ct = wid$ct
   ct$clicker.dir = clicker.dir
   ct$client.init.handlers = Wid$client$init.handlers
@@ -234,7 +243,7 @@ default.clicker.server.init.ct = function(wid, clicker.dir, clicker.tag=NULL,Wid
 clicker.server.update.result.tags = function(task.id = wid$task.id,selected="none",clicker.dir=opts$clicker.dir,  app=getApp(), opts=rt.opts(),wid=NULL) {
   restore.point("clicker.server.update.result.tags")
 
-  ns = clicker.wid.ns(wid)
+  ns = clicker.wid.ns(wid, task.id=task.id)
 
   tags = get.clicker.tags(clicker.dir=clicker.dir, task.id=task.id)
 
@@ -244,8 +253,8 @@ clicker.server.update.result.tags = function(task.id = wid$task.id,selected="non
   updateSelectizeInput(app$session,inputId = ns("resultsRunSelect"), choices=tags.li,selected = selected)
 }
 
-clicker.wid.ns = function(wid, task.id=wid$task.id) {
+clicker.wid.ns = function(wid, task.id=first.non.null(wid$task.id, ct$task.id), ct=NULL) {
   restore.point("clicker.wid.ns")
-  ns = first.non.null(wid[["ns"]],NS(wid$task.id))
+  ns = first.non.null(wid[["ns"]],NS(task.id))
   ns
 }

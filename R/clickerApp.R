@@ -162,15 +162,39 @@ clicker.client.start.task.observer = function(tok=app$glob$default.token,app=get
 clicker.update.client.task = function(ct = app$glob[["ct"]], app=getApp()) {
   restore.point("clicker.update.client.task")
 
+  # currently no task
   if (is.null(ct)) {
-    if (!isTRUE(app$no.clicker.task)) {
+
+    # task was submitted. we keep the current ui
+    if (isTRUE(app$has.submitted)) {
+      return()
+
+    # task was stopped before user could submit anything
+    } else if (isTRUE(app$has.seen.task)) {
+      # Show wait message and disable
+      # all inputs and buttons
+
+      ct = app$glob$prev.ct
+      qu = first.non.null(ct[["wid"]],ct[["qu"]])
+
+      app$has.submitted = TRUE
+      ns = NS(ct$task.id)
+      msg = first.non.null(glob$page.params$timeout,"The time for submitting an answer has runned out Please wait until the next quiz starts.")
+      setUI(paste0(qu$id,"-msgUI"), p(msg))
+      # disable input
+      js = '$("button, :input").prop("disabled", true); $("button").hide();'
+      evalJS(js)
+
+    # just show wait page
+    } else {
       app$no.clicker.task = TRUE
       ui = clicker.client.wait.page(app$glob$page.params)
       setUI(app$glob$mainUI, ui)
     }
     return()
   }
-  app$no.clicker.task = FALSE
+  app$has.seen.task = TRUE
+  app$has.submitted = FALSE
 
   if (is.function(ct$client.init.handlers)) {
     ct$client.init.handlers(ct)
@@ -186,6 +210,17 @@ clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=
   #cat("\nI am observed...", sample.int(1000,1))
 
   files = list.files(file.path(clicker.dir, "running_task"),full.names = FALSE)
+
+  # running task has been stopped
+  if (length(files) == 0 & !is.null(glob$running.task.file)) {
+    # update reactive values
+    glob$task.update.rv$nonce = runif(1)
+    glob$running.task.file = NULL
+    glob$prev.ct = glob$ct
+    glob$ct = NULL
+    invalidateLater(millis)
+    return()
+  }
 
   files = setdiff(files, glob$running.task.file)
   if (length(files)==0) {
@@ -228,7 +263,6 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   glob = app$glob
   userid = app$userid
 
-  ct = glob[["ct"]]
   tag = basename(ct$tag.dir)
 
   # Values is a list with length equal to
@@ -239,7 +273,7 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
 
   submit.time = Sys.time()
 
-  qu = ct$wid
+  qu = first.non.null(ct[["wid"]],ct[["qu"]])
   li = vector("list", length(qu$parts))
   value.i = 1
   i = 1
@@ -249,12 +283,17 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
       value.i = (value.i:(value.i+length(part$rows)-1))
       answers = unlist(values[value.i])
       answer.ind = match(answers, part$cols)
-      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i*1000+seq_along(answers), userid=app$userid, answer.ind=answer.ind, answer =  answers)
-
+      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i*1000+seq_along(answers), userid=app$userid, answer.ind=answer.ind, answer =  answers, checked=TRUE)
+    } else if (part$type=="mc") {
+      choices = unlist(part$choices)
+      answers = unlist(values[[value.i]])
+      checked = choices %in% answers
+      answer.ind = seq_along(choices)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i, userid=app$userid, answer.ind=answer.ind, answer =  choices, checked=checked)
     } else {
       answers = unlist(values[[value.i]])
-      answer.ind = match(answers, part$answer)
-      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i, userid=app$userid, answer.ind=answer.ind, answer =  answers)
+      answer.ind = match(answers, part$choices)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i, userid=app$userid, answer.ind=answer.ind, answer =  answers, checked=TRUE)
     }
   }
   if (length(li)>1) {
@@ -272,8 +311,19 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   write.table(df, file=sub.file, sep=",", row.names=FALSE, col.names= FALSE)
   glob$glob[["ct"]]$num.sub = ct$num.sub+1
 
-  ui= clicker.client.submitted.page(glob$page.params, answer=values$answer)
-  setUI(glob$mainUI,ui)
+
+  # Show wait message and disable
+  # all inputs and buttons
+
+  app$has.submitted = TRUE
+  ns = NS(ct$task.id)
+  wait = first.non.null(glob$page.params$submitted,"You have submitted your answer. Please wait until the next quiz starts.")
+  setUI(paste0(qu$id,"-msgUI"), p(wait))
+
+  # disable input
+  js = '$("button, :input").prop("disabled", true); $("button").hide();'
+  evalJS(js)
+
 }
 
 set.global.observer = function(id, ..., obs=observe(...)) {

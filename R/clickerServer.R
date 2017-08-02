@@ -5,6 +5,17 @@ examples.click.server = function() {
 
 }
 
+clicker.remove.running.task = function(clicker.dir=ct$clicker.dir, task.id = ct$task.id, ct = NULL) {
+  restore.point("remove.running.task")
+  # remove existing running files
+  running.dir = file.path(clicker.dir, "running_task")
+  files = list.files(running.dir,full.names = TRUE)
+  if (!is.null(task.id)) {
+    files = files[has.substr(files, task.id)]
+  }
+  file.remove(files)
+
+}
 
 write.clicker.task = function(ct,clicker.dir=ct$clicker.dir, clicker.tag=first.non.null(ct[["clicker.tag"]],make.clicker.tag(clicker.dir=clicker.dir, ct=ct))) {
   restore.point("write.clicker.task")
@@ -29,12 +40,17 @@ write.clicker.task = function(ct,clicker.dir=ct$clicker.dir, clicker.tag=first.n
   # write file that specifies task as running
   running.dir = file.path(clicker.dir, "running_task")
 
+
   # remove existing running files
   files = list.files(running.dir,full.names = TRUE)
   file.remove(files)
 
   running.file = file.path(running.dir,paste0(ct$task.id,"---", as.integer(Sys.time())))
   writeLines("",running.file)
+
+  # write a file with the last task
+  # we are mainly interested in the creation time
+  writeLines(ct$task.id, file.path(clicker.dir,"LAST_TASK.txt"))
 
   invisible(ct)
 }

@@ -78,6 +78,7 @@ quiz.clicker.client.ui = function(qu, lang="en") {
     pli = c(pli, list(submitButton(qu$checkBtnId,label = sendLabel,form.ids = ids),br()))
   }
 
+  pli=tagList(pli,uiOutput(paste0(qu$id, "-msgUI")))
   withMathJax(pli)
 }
 

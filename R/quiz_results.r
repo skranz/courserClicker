@@ -65,7 +65,7 @@ show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
   has.mathjax = any(has.substr(choices,"\\("))
   if (is.na(do.plot)) do.plot = !has.mathjax
 
-  var = names(dat)[[NCOL(dat)]]
+  var = "answer"
   counts = count.choices(dat[[var]], choices)
   shares = round(100*counts / max(1,sum(counts)))
 
@@ -121,7 +121,7 @@ show.clicker.quiz.mc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
   dat = dat[dat$part.ind==part.ind,,drop=FALSE]
   choices = unlist(part$choices)
 
-  dat = transform.to.mc.data(dat, choices)
+  #dat = transform.to.mc.data(dat, choices)
 
   sum = group_by(dat,answer) %>% summarize(yes=sum(checked),no=sum(!checked))
 
@@ -139,7 +139,7 @@ show.clicker.quiz.mc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
     pre = post = ""
     #pre = ifelse(correct,"* ","")
     #post = ifelse(correct," (Answer: Yes)", " (Answer: No)")
-    pre = ifelse(correct,"(A: Yes) ","(A: No) ")
+    pre = ifelse(correct,"(Yes) ","(No) ")
     choices = paste0(pre, choices,post)
   }
 
@@ -154,6 +154,7 @@ show.clicker.quiz.mc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
   hc_add_series(data = yes,name = "Yes", color="#2980b9") %>%
   hc_add_series(data = no,name = "No",color="#d35400")
 
+  cat("\nshow mc results as plot")
   # need random string to correctly rerender plot
   plotId = paste0(outputId,"_Plot_",random.string(nchar=8))
   ui = tagList(
@@ -177,7 +178,7 @@ show.clicker.quiz.numeric.results = function(dat, qu,part.ind = 1, part = qu$par
 
   dat = dat[dat$part.ind==part.ind,,drop=FALSE]
   answer = as.numeric(part$answer)
-  var = names(dat)[[NCOL(dat)]]
+  var = "answer"
   vals = dat[[var]]
 
   #plot = clicker.numeric.relative.deviation.plot(vals, answer)
@@ -282,17 +283,24 @@ normalize.clicker.tag = function(ct, clicker.tag) {
 # transform submission data into simpler format
 quiz.clicker.transform.sub.data = function(dat, ct) {
   restore.point("quiz.clicker.transform.sub.data")
-  # don't transform yet
+
+  qu = first.non.null(ct[["qu"]],ct[["wid"]])
+
+  # Add checked and points to dat
+  dat$points = 0
+
+  part.ind = 1
+  for (part.ind in seq_along(qu$parts)) {
+    part = qu$parts[[part.ind]]
+    rows = dat$part.ind == part.ind
+    dat[rows,"points"] = get.clicker.quiz.points(dat = dat[rows,], part = part)
+  }
+
   return(dat)
 
-  if (isTRUE(ct$type=="quiz")) {
-    part = ct$wid$parts[[1]]
-    if (isTRUE(part$type=="mc")) {
-      dat = transform.to.mc.data(dat, part$choices)
-    }
-  }
   dat
 }
+
 
 transform.to.mc.data = function(dat, choices) {
   restore.point("transform.to.mc.data")
@@ -305,4 +313,36 @@ transform.to.mc.data = function(dat, choices) {
 
   jd = select(jd,submit.time,userid,answer,checked)
   jd
+}
+
+get.clicker.quiz.points = function(dat, part) {
+  restore.point("get.clicker.quiz.points")
+  if (part$type == "sc") {
+    points = first.non.null(part[["points"]], 2)
+
+    correct = (as.character(dat$answer) == as.character(part$answer))
+    return(correct * points)
+  } else if (part$type == "mc") {
+    restore.point("get.clicker.quiz.points.mc")
+    points = first.non.null(part[["points"]], 0.5*length(part$choices))
+    item.points = points / length(part$choices)
+    partial.points = first.non.null(part$partial.points, TRUE)
+    is.sol = dat$answer %in% part$answer
+    correct = dat$checked == is.sol
+
+    if (partial.points) {
+      return(correct*item.points)
+    }
+
+    # no partial points
+    # need to check for each user
+    # whether all choices are correct
+    dat = dat %>%
+      mutate(is.sol = is.sol) %>%
+      group_by(dat, userid, tag) %>%
+      mutate(correct = all(checked == is.sol))
+
+    return(dat$correct * item.points)
+  }
+  return(rep(0, NROW(dat)))
 }
