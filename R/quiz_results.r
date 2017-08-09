@@ -294,6 +294,7 @@ quiz.clicker.transform.sub.data = function(dat, ct) {
     part = qu$parts[[part.ind]]
     rows = dat$part.ind == part.ind
     dat[rows,"points"] = get.clicker.quiz.points(dat = dat[rows,], part = part)
+    dat[rows,"max.points"] = part$points
   }
 
   return(dat)
