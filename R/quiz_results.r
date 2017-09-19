@@ -344,6 +344,29 @@ get.clicker.quiz.points = function(dat, part) {
       mutate(correct = all(checked == is.sol))
 
     return(dat$correct * item.points)
+  } else if (part$type=="numeric") {
+    sol = as.numeric(part$answer)
+
+    points = rep(0,NROW(dat))
+    # give points based on relative distance
+    if (!is.null(part$distance_points)) {
+      dist = abs((as.numeric(dat$anwser) - sol)/sol)
+      for (dp in part$distance_points) {
+        rows = dist<=dp[1]
+        points[rows] = pmax(points[rows],dp[2])
+      }
+      return(points)
+    }
+
+    # only points if anser is exact (up to rounding)
+    answer = as.numeric(dat$answer)
+    if (!is.null(part$round)) {
+      sol = round(sol, part$round)
+      answer = round(answer, part$round)
+    }
+    correct.points = points = first.non.null(part[["points"]],3)
+    correct = (answer == sol)
+    return(correct * correct.points)
   }
   return(rep(0, NROW(dat)))
 }

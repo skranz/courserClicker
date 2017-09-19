@@ -255,6 +255,40 @@ clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=
   invalidateLater(millis)
 }
 
+clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, userid=app$userid, app=getApp()) {
+  restore.point("clicker.make.submit.data")
+  submit.time = Sys.time()
+
+  li = vector("list", length(qu$parts))
+  value.i = 1
+  i = 1
+  for (i in seq_along(li)) {
+    part = qu$parts[[i]]
+    if (part$type == "grid_mc" | part$type == "grid_sc") {
+      value.i = (value.i:(value.i+length(part$rows)-1))
+      answers = unlist(values[value.i])
+      answer.ind = match(answers, part$cols)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i*1000+seq_along(answers), userid=userid, answer.ind=answer.ind, answer =  answers, checked=TRUE)
+    } else if (part$type=="mc") {
+      choices = unlist(part$choices)
+      answers = unlist(values[[value.i]])
+      checked = choices %in% answers
+      answer.ind = seq_along(choices)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i, userid=userid, answer.ind=answer.ind, answer =  choices, checked=checked)
+    } else {
+      answers = unlist(values[[value.i]])
+      answer.ind = match(answers, part$choices)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i, userid=userid, answer.ind=answer.ind, answer =  answers, checked=TRUE)
+    }
+  }
+  if (length(li)>1) {
+    df = bind_rows(li)
+  } else {
+    df = li[[1]]
+  }
+
+  df
+}
 
 clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   restore.point("clicker.client.submit")
@@ -271,43 +305,18 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   # list element is itself a list
   # containing the checked answers
 
-  submit.time = Sys.time()
 
   qu = first.non.null(ct[["wid"]],ct[["qu"]])
-  li = vector("list", length(qu$parts))
-  value.i = 1
-  i = 1
-  for (i in seq_along(li)) {
-    part = qu$parts[[i]]
-    if (part$type == "grid_mc" | part$type == "grid_sc") {
-      value.i = (value.i:(value.i+length(part$rows)-1))
-      answers = unlist(values[value.i])
-      answer.ind = match(answers, part$cols)
-      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i*1000+seq_along(answers), userid=app$userid, answer.ind=answer.ind, answer =  answers, checked=TRUE)
-    } else if (part$type=="mc") {
-      choices = unlist(part$choices)
-      answers = unlist(values[[value.i]])
-      checked = choices %in% answers
-      answer.ind = seq_along(choices)
-      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i, userid=app$userid, answer.ind=answer.ind, answer =  choices, checked=checked)
-    } else {
-      answers = unlist(values[[value.i]])
-      answer.ind = match(answers, part$choices)
-      li[[i]] = data_frame(submit.time=submit.time,task.id=ct$task.id, tag=tag, part.ind=i, userid=app$userid, answer.ind=answer.ind, answer =  answers, checked=TRUE)
-    }
-  }
-  if (length(li)>1) {
-    df = bind_rows(li)
-  } else {
-    df = li[[1]]
-  }
+
+  df = clicker.make.submit.data(values=values,qu=qu,tag=tag, task.id=ct$task.id, userid=app$userid)
 
   if (!file.exists(file.path(ct$task.dir, "colnames.csv")))
     writeLines(paste0(colnames(df), collapse=","),file.path(ct$task.dir,"colnames.csv"))
 
+  userhash = digest(userid)
   # we write as a csv table for security reasons
   # R binary files seem generaly more risky when loaded
-  sub.file = file.path(ct$tag.dir, paste0(userid,".sub"))
+  sub.file = file.path(ct$tag.dir, paste0(userhash,".sub"))
   write.table(df, file=sub.file, sep=",", row.names=FALSE, col.names= FALSE)
   glob$glob[["ct"]]$num.sub = ct$num.sub+1
 
