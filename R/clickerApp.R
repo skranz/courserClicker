@@ -32,6 +32,7 @@ clickerClientApp = function(opts=clicker.client.opts()) {
   glob$clicker.pag
   glob$page.params = make.clicker.page.params(opts$page.params, lang=opts[["lang"]])
 
+
   lop = clicker.client.lop(glob)
   set.lop(lop)
 
@@ -53,62 +54,11 @@ clickerClientApp = function(opts=clicker.client.opts()) {
     uiOutput("mainUI")
   )
   appInitHandler(function(...,session=app$session,app=getApp()) {
-    glob = app$glob
-    task.update.rv = glob$task.update.rv
-    # we must observe the query string to perform initialization
-    app$init.observer = observe(priority = -100,x = {
-      if (isTRUE(app$is.initialized)) {
-        app$init.observer$destroy()
-        return()
-      }
-      app$is.initialized = TRUE
-      query <- parseQueryString(session$clientData$url_search)
-      restore.point("clicker.client.observe.query")
-      clicker.client.init.app.with.query(query)
-    })
-
+    initLoginDispatch(lop)
   })
   app
 }
 
-clicker.client.init.app.with.query = function(query, app=getApp()) {
-  restore.point("clicker.client.init.app.with.query")
-  glob = app$glob
-  mainUI = glob$mainUI
-
-  # check if we have a token
-  key = query$token_key
-  if (!is.null(query$token_key)) {
-    clicker.client.init.app.with.token(token_key=query$token_key, token_file=query$token_file)
-    return()
-  }
-
-  # use normal login dispatch
-  lop = get.lop(app=app)
-  initLoginDispatch(lop)
-}
-
-clicker.client.init.app.with.token = function(token_key, token_file, app=getApp()) {
-  restore.point("clicker.client.init.app.with.token")
-
-  # check if token file exists
-  failed.ui = clicker.client.failed.login.ui()
-  file = file.path(glob$token.dir,token_file)
-  if (!file.exists(file)) {
-    setUI(mainUI, failed.ui)
-    return()
-  }
-
-  tok = read.login.token(file=file)
-
-  now = as.numeric(Sys.time())
-  if (!isTRUE(now <= tok$expire)) {
-    html="<h2>Timout. Your login token is not active anymore. Please login again.</h2>"
-    setUI(mainUI, HTML(html))
-    return()
-  }
-  clicker.client.start.task.observer(tok=tok)
-}
 
 clicker.client.opts = function(
   clicker.dir=getwd(),
@@ -138,7 +88,7 @@ clicker.client.opts = function(
 
 .glob.obs.env = new.env()
 
-clicker.client.start.task.observer = function(tok=app$glob$default.token,app=getApp()) {
+clicker.client.start.task.observer = function(tok,app=getApp()) {
   restore.point("clicker.client.start.task.observer")
   app$tok = tok
   app$userid = tok$userid

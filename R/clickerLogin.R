@@ -7,22 +7,35 @@ clicker.client.lop = function(glob){
   db.arg = list(dbname=paste0(glob$db.dir,"/userDB.sqlite"),drv=SQLite())
   login.fun = clicker.client.login.fun
 
-  lop = loginModule(db.arg = db.arg, login.fun=login.fun, check.email.fun=glob$check.email.fun, email.domain = glob$email.domain, email.text.fun = glob$email.text.fun, app.url=glob$app.url, app.title=glob$app.title,init.userid=glob$init.userid, init.password=glob$init.password,container.id = "mainUI",login.ui.fun = client.clicker.login.ui, smtp=glob$smtp)
+  lop = loginModule(db.arg = db.arg, login.fun=login.fun, check.email.fun=glob$check.email.fun, email.domain = glob$email.domain, email.text.fun = glob$email.text.fun, app.url=glob$app.url, app.title=glob$app.title,init.userid=glob$init.userid, init.password=glob$init.password,container.id = "mainUI",login.ui.fun = client.clicker.login.ui, smtp=glob$smtp, login.by.query.key = "allow", token.dir=glob$token.dir)
+
   lop
 }
 
 # This function will be called after a succesful login
-clicker.client.login.fun = function(app=getApp(), userid, target="_self",...) {
+clicker.client.login.fun = function(app=getApp(), userid, target="_self", tok=NULL,...) {
   restore.point("clicker.client.login.fun")
   glob = app$glob
+
+  # We don't use tokens and URL with key
+  # Drawback: If app refreshes, we need to login again
   if (!isTRUE(glob$use.token)) {
-    tok = list(userid=userid)
+    clicker.client.start.task.observer(tok = list(userid=userid))
+    return()
+  }
+
+  # Already called with a token, i.e. we have the correct URL
+  if (!is.null(tok)) {
     clicker.client.start.task.observer(tok = tok)
     return()
   }
 
-  token = save.login.token(token.dir = glob$token.dir, userid=userid, valid.min = glob$token.valid.min)
-  url = get.login.token.url(app.url=glob$app.url,token = token)
+  # We logged-in without token
+  # Generate a token and open link to URL with key
+  # This is more stable on a refresh action
+  tok = make.login.token(userid=userid,validMinutes=glob$token.valid.min)
+  write.login.token(tok=tok, token.dir=glob$token.dir)
+  url = token.login.url(glob$app.url,tok = tok)
   html = paste0('<a href="', url,'" class="button" target="',target,'">Click here if clicker app does not open automatically.</a>')
   setUI("mainUI",HTML(html))
   open.app.with.login.token(url=url,target=target)
