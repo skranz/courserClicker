@@ -1,3 +1,5 @@
+# Sign up modes for clickerApp
+# By token: query key or cookie
 
 
 clicker.client.lop = function(glob){
@@ -25,6 +27,7 @@ clicker.client.login.fun = function(app=getApp(), userid, target="_self", tok=NU
   }
 
   # Already called with a token, i.e. we have the correct URL
+  # or have set a cookie
   if (!is.null(tok)) {
     clicker.client.start.task.observer(tok = tok)
     return()
