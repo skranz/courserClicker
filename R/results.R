@@ -60,6 +60,8 @@ compute.clicker.highscore = function(clicker.dir, multi.tag.action = c("sum", "l
   restore.point("compute.clicker.highscore")
   df = update.all.aggregate.task.data(clicker.dir,return.data = TRUE)
 
+  if (is.null(df)) return(NULL)
+
   if (multi.tag.action == "latest") {
     df = df %>%
       group_by(userid, task.id) %>%
@@ -90,6 +92,8 @@ update.all.aggregate.task.data = function(clicker.dir, return.data=FALSE,...) {
 
   task.dirs = list.files(file.path(clicker.dir,"tasks"), full.names=TRUE)
 
+
+  if (length(task.dirs)==0) return(NULL)
 
   li = lapply(task.dirs, ..., function(task.dir,...) {
     update.aggregate.task.data(task.dir = task.dir,return.data=return.data,...)
