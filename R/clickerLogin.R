@@ -1,5 +1,6 @@
 # Sign up modes for clickerApp
 # By token: query key or cookie
+# By username with password (if user exists)
 
 
 clicker.client.lop = function(glob){
