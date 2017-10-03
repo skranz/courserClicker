@@ -1,4 +1,12 @@
-make.clicker.page.params = function(params, lang="en") {
+make.clicker.page.params = function(params=list(), lang="en", clicker.dir=NULL) {
+  restore.point("make.clicker.page.params")
+  file = file.path(clicker.dir,"pages","page_fields.yaml")
+  if (file.exists(file)) {
+    p = read.yaml(file=file)
+    cols = setdiff(names(p),names(params))
+    params[cols] = p[cols]
+  }
+
   def.params = default.clicker.pages.params(lang=lang)
   def.params[names(params)] = params
   params = def.params
@@ -23,6 +31,11 @@ default.clicker.pages.params = function(lang="en") {
   if (lang=="de") {
     mark_utf8(list(
       title="Vorlesungsquiz",
+      loginHeader = "<h4>Anmeldung Vorlesungsquiz</h4>",
+      loginAs = "Angemeldet als",
+      loginChange="Nutzername ändern",
+      loginUserLabel ="Nutzername",
+      loginBtnLabel = "Anmelden",
       sendLabel="Absenden",
       wait = "Bitte warten Sie, bis das nächste Quiz gestartet wird.",
       submitted="Sie haben Ihre Antwort abgeschickt. Bitte warten Sie, bis das nächste Quiz gestartet wird.",
@@ -31,6 +44,11 @@ default.clicker.pages.params = function(lang="en") {
   } else {
    list(
       title="Lecture Quiz",
+      loginHeader = "<h4>Login to Lecture Quiz</h4>",
+      loginChange="Change user",
+      loginAs="Username:",
+      loginUserLabel ="Username",
+      loginBtnLabel = "Login",
       sendLabel="Send",
       wait="Please wait until the next quiz starts.",
       submitted="You have submitted your answer. Please wait until the next quiz starts.",

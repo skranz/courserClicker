@@ -12,7 +12,7 @@ clicker.client.example = function() {
   port = 4634
   app.url = "127.0.0.1:4634"
   app.url = "http://localhost:4634"
-  opts = clicker.client.opts(clicker.dir=clicker.dir, app.url=app.url, show.course.list = FALSE, show.course.code=FALSE, use.token=FALSE, use.login.db=FALSE, app.title="Vorlesungsquiz VWL", lang="de")
+  opts = clicker.client.opts(clicker.dir=clicker.dir, app.url=app.url, app.title="Vorlesungsquiz VWL", lang="de", email.domain="uni-ulm.de")
   app = clickerClientApp(opts)
   viewApp(app, port=port)
 }
@@ -30,7 +30,7 @@ clickerClientApp = function(opts=clicker.client.opts()) {
   glob$mainUI = "mainUI"
   glob$running.task.file = NULL
   glob$clicker.pag
-  glob$page.params = make.clicker.page.params(opts$page.params, lang=opts[["lang"]])
+  glob$page.params = make.clicker.page.params(opts$page.params, lang=opts[["lang"]], clicker.dir=glob$clicker.dir)
 
 
   lop = clicker.client.lop(glob)
@@ -51,7 +51,8 @@ clickerClientApp = function(opts=clicker.client.opts()) {
 
   app$ui = fluidPage(
     uiOutput("titleUI"),
-    uiOutput("mainUI")
+    uiOutput("mainUI"),
+    uiOutput("useridUI")
   )
   appInitHandler(function(...,session=app$session,app=getApp()) {
     initLoginDispatch(lop)
@@ -68,18 +69,14 @@ clicker.client.opts = function(
   need.token = FALSE,
   just.login = FALSE,
   use.token = TRUE,
-  use.login.db=TRUE,
   app.url=NULL, clicker.app.url = app.url,
   init.userid="", init.password="", init.code="",
   app.title="Quiz",
-  email.domain = NULL, check.email.fun = NULL,
-  email.text.fun=default.email.text.fun,
-  smtp = NULL,
   token.valid.min = 180,
-  allow.guest.login=TRUE, open.app.in.new.tab=TRUE,
+  open.app.in.new.tab=TRUE,
   show.course.list=FALSE, show.course.code=FALSE,
   lang="en",
-  page.params=list(title=app.title),
+  make.guest.init.userid = FALSE,
   ...)
 {
   c(as.list(environment()),list(...))
@@ -155,7 +152,7 @@ clicker.update.client.task = function(ct = app$glob[["ct"]], app=getApp()) {
 }
 
 clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=1000) {
-  restore.point("clicker.update.task")
+  #restore.point("clicker.update.task")
   cat(".")
   #cat("\nI am observed...", sample.int(1000,1))
 
@@ -266,7 +263,7 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   userhash = digest(userid)
   # we write as a csv table for security reasons
   # R binary files seem generaly more risky when loaded
-  sub.file = file.path(ct$tag.dir, paste0(userhash,".sub"))
+  sub.file = file.path(ct$tag.dir, paste0(userhash,"_",sample.int(100000,1), ".sub"))
   write.table(df, file=sub.file, sep=",", row.names=FALSE, col.names= FALSE)
   glob$glob[["ct"]]$num.sub = ct$num.sub+1
 
