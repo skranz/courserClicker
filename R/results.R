@@ -60,7 +60,8 @@ compute.clicker.highscore = function(clicker.dir, multi.tag.action = c("sum", "l
   restore.point("compute.clicker.highscore")
   df = update.all.aggregate.task.data(clicker.dir,return.data = TRUE)
 
-  if (is.null(df)) return(NULL)
+  if (NROW(df)==0)
+    return(NULL)
 
   if (multi.tag.action == "latest") {
     df = df %>%
