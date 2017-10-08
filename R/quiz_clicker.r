@@ -79,7 +79,7 @@ quiz.clicker.client.ui = function(qu, lang="en") {
   }
 
   pli=tagList(pli,uiOutput(paste0(qu$id, "-msgUI")))
-  withMathJax(pli)
+  withMathJaxNoHeader(pli)
 }
 
 quiz.clicker.client.part.ui = function(part) {

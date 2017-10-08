@@ -108,7 +108,7 @@ show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
     html = html.result.table(df,colnames=c("Number","Share","Answer",""), font.size="110%", align=c("center","center","left"),bg.color = bg.color)
 
     ui = tagList(HTML(html))
-    if (has.mathjax) ui = armd::with.mathjax(ui)
+    if (has.mathjax) ui = withMathJaxNoHeader(ui)
     setUI(outputId, ui)
   }
   invisible(ui)

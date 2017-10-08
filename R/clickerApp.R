@@ -50,6 +50,7 @@ clickerClientApp = function(opts=clicker.client.opts()) {
   set.global.observer("myobs",obs=obs)
 
   app$ui = fluidPage(
+    mathjaxHeader(),
     uiOutput("titleUI"),
     uiOutput("mainUI"),
     uiOutput("useridUI")
