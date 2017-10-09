@@ -8,13 +8,15 @@ clicker.client.example = function() {
   restore.point.options(display.restore.point = TRUE)
 
   clicker.dir = "D:/libraries/courser/courses/vwl/course/clicker"
+  token.dir = "D:/libraries/courser/courses/vwl/course/stud_tokens"
+
   setwd(clicker.dir)
   port = 4634
   app.url = "127.0.0.1:4634"
   app.url = "http://localhost:4634"
-  opts = clicker.client.opts(clicker.dir=clicker.dir, app.url=app.url, app.title="Vorlesungsquiz VWL", lang="de", email.domain="uni-ulm.de")
+  opts = clicker.client.opts(courseid="vwl", clicker.dir=clicker.dir, app.url=app.url, app.title="Vorlesungsquiz VWL", lang="de", email.domain="uni-ulm.de", token.dir=token.dir)
   app = clickerClientApp(opts)
-  viewApp(app, port=port)
+  viewApp(app, port=port, launch.browser = TRUE)
 }
 
 
@@ -63,6 +65,7 @@ clickerClientApp = function(opts=clicker.client.opts()) {
 
 
 clicker.client.opts = function(
+  courseid=NULL,
   clicker.dir=getwd(),
   db.dir = file.path(clicker.dir,"db"),
   running.dir = file.path(clicker.dir,"running"),
@@ -203,7 +206,7 @@ clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=
   invalidateLater(millis)
 }
 
-clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, userid=app$userid, app=getApp()) {
+clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, userid=app$userid, cookie = getCourserAllCookie, app=getApp()) {
   restore.point("clicker.make.submit.data")
   submit.time = Sys.time()
 
@@ -222,7 +225,7 @@ clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, useri
       answers = unlist(values[[value.i]])
       checked = choices %in% answers
       answer.ind = seq_along(choices)
-      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i, userid=userid, answer.ind=answer.ind, answer =  choices, checked=checked)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i, userid=userid, cookie=cookie$key, answer.ind=answer.ind, answer =  choices, checked=checked)
     } else {
       answers = unlist(values[[value.i]])
       answer.ind = match(answers, part$choices)

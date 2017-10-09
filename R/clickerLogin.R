@@ -59,6 +59,8 @@ clicker.client.login.fun = function(app=getApp(), userid, target="_self", tok=NU
 
 
 
+  courser.track.cookie(courseid=glob$courseid, token.dir=glob$token.dir,userid = userid,login.app = "clicker", login.mode = login.mode)
+
   # We don't use tokens and URL with key
   # Drawback: If app refreshes, we need to login again
   if (!isTRUE(glob$use.token)) {
