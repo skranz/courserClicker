@@ -133,7 +133,7 @@ clicker.update.client.task = function(ct = app$glob[["ct"]], app=getApp()) {
       msg = first.non.null(glob$page.params$timeout,"The time for submitting an answer has runned out Please wait until the next quiz starts.")
       setUI(paste0(qu$id,"-msgUI"), p(msg))
       # disable input
-      js = '$("button, :input").prop("disabled", true); $("button").hide();'
+      js = '$(":input").prop("disabled", true); $("button:not(#loginNewBtn)").hide(); $("#loginNewBtn").prop("disabled", false);'
       evalJS(js)
 
     # just show wait page
@@ -206,7 +206,7 @@ clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=
   invalidateLater(millis)
 }
 
-clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, userid=app$userid, cookie = getCourserAllCookie, app=getApp()) {
+clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, userid=app$userid, cookie = getCourserAllCookie(), app=getApp()) {
   restore.point("clicker.make.submit.data")
   submit.time = Sys.time()
 
@@ -219,7 +219,7 @@ clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, useri
       value.i = (value.i:(value.i+length(part$rows)-1))
       answers = unlist(values[value.i])
       answer.ind = match(answers, part$cols)
-      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i*1000+seq_along(answers), userid=userid, answer.ind=answer.ind, answer =  answers, checked=TRUE)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i*1000+seq_along(answers), userid=userid,cookie=cookie$key, answer.ind=answer.ind, answer =  answers, checked=TRUE)
     } else if (part$type=="mc") {
       choices = unlist(part$choices)
       answers = unlist(values[[value.i]])
@@ -229,7 +229,7 @@ clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, useri
     } else {
       answers = unlist(values[[value.i]])
       answer.ind = match(answers, part$choices)
-      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i, userid=userid, answer.ind=answer.ind, answer =  answers, checked=TRUE)
+      li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i, userid=userid,cookie=cookie$key, answer.ind=answer.ind, answer =  answers, checked=TRUE)
     }
   }
   if (length(li)>1) {
@@ -281,7 +281,7 @@ clicker.client.submit = function(values, app=getApp(), ct = app$glob[["ct"]]) {
   setUI(paste0(qu$id,"-msgUI"), p(wait))
 
   # disable input
-  js = '$("button, :input").prop("disabled", true); $("button").hide();'
+  js = '$(":input").prop("disabled", true); $("button:not(#loginNewBtn)").hide(); $("#loginNewBtn").prop("disabled", false);'
   evalJS(js)
 
 }

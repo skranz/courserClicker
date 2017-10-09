@@ -126,7 +126,7 @@ show.userid.ui = function(userid, login.mode,lop, app=getApp()) {
 
 
   # With query key in url user cannot be changed
-  if (isTRUE(login.mode)=="query") {
+  if (isTRUE(login.mode=="query")) {
     html = paste0('<hr><span style="font-size: 8px; color: #444444">', app$glob$page.params$loginAs," ", userid,'</span>')
 
   # With cookie or manual login , user may be changed
@@ -143,8 +143,12 @@ show.userid.ui = function(userid, login.mode,lop, app=getApp()) {
 
       removeCookie("courserClickerCookie")
       app$is.authenticated = FALSE
+      ct = app$glob[["ct"]]
+      if (!is.null(ct$wid))
+        setUI(paste0(ct$wid$id,"-msgUI"), "")
       setUI("useridUI", HTML(""))
       setUI("titleUI", HTML(""))
+
 
       # Temporary remove login.via.cookie
       lop = as.environment(as.list(lop, all.names=TRUE))
