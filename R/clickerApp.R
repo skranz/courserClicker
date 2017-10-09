@@ -113,6 +113,7 @@ clicker.client.start.task.observer = function(tok,app=getApp()) {
 clicker.update.client.task = function(ct = app$glob[["ct"]], app=getApp()) {
   restore.point("clicker.update.client.task")
 
+  glob = app$glob
   # currently no task
   if (is.null(ct)) {
 
