@@ -85,7 +85,9 @@ compute.clicker.highscore = function(clicker.dir, multi.tag.action = c("sum", "l
 load.aggregate.task.data = function(task.dir = file.path(clicker.dir, "tasks", task.id), clicker.dir = ct$clicker.dir, task.id = ct$task.id, ct=NULL) {
   data.file = file.path(task.dir, "aggregate.csv")
   if (!file.exists(data.file)) return(NULL)
-  read_csv(data.file,col_names = TRUE)
+  dat = read_csv(data.file,col_names = TRUE)
+  dat$tag = as.character(dat$tag)
+  dat
 }
 
 update.all.aggregate.task.data = function(clicker.dir, return.data=FALSE,...) {
@@ -101,6 +103,8 @@ update.all.aggregate.task.data = function(clicker.dir, return.data=FALSE,...) {
   })
 
   if (!return.data) return(NULL)
+
+  restore.point("update.all.aggregate.task.data2")
 
   li = li[!sapply(li, is.null)]
   df = bind_rows(li)
@@ -126,6 +130,12 @@ update.aggregate.task.data = function(clicker.dir = ct$clicker.dir, task.id = ct
 
   dirs = list.files(file.path(task.dir, "tags"), full.names = TRUE)
 
+  # Add submissions from home
+  homesub.dir = file.path(task.dir,"homesub")
+  if (dir.exists(homesub.dir))
+    dirs = c(dirs,homesub.dir)
+
+
   files = unlist(lapply(dirs, function(dir) list.files(dir,pattern = glob2rx("*.sub"),full.names = TRUE)))
   if (length(files)==0)
     return(NULL)
@@ -136,6 +146,7 @@ update.aggregate.task.data = function(clicker.dir = ct$clicker.dir, task.id = ct
   txt = c(txt, li)
 
   dat = readr::read_csv(merge.lines(txt))
+  dat$tag = as.character(dat$tag)
 
   if (is.null(ct))
     ct = readRDS(file.path(task.dir, "ct.Rds"))
@@ -156,6 +167,7 @@ update.aggregate.task.data = function(clicker.dir = ct$clicker.dir, task.id = ct
 
 
 is.aggregate.task.data.up.to.date = function(clicker.dir = ct$clicker.dir, task.id = ct$task.id, task.dir = file.path(clicker.dir, "tasks", task.id), ct=NULL) {
+  restore.point("is.aggregate.task.data.up.to.date")
   data.file = file.path(task.dir, "aggregate.csv")
   if (!file.exists(data.file)) return(FALSE)
 
@@ -164,7 +176,7 @@ is.aggregate.task.data.up.to.date = function(clicker.dir = ct$clicker.dir, task.
 
   data.date = file.mtime(data.file)
 
-  any(tag.date > data.date)
+  !any(tag.date > data.date)
 }
 
 count.choices = function(values, choices) {

@@ -65,8 +65,8 @@ show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
   has.mathjax = any(has.substr(choices,"\\("))
   if (is.na(do.plot)) do.plot = !has.mathjax
 
-  var = "answer"
-  counts = count.choices(dat[[var]], choices)
+  counts = count.choices(dat$answer.ind, seq_along(choices))
+  names(counts) = choices
   shares = round(100*counts / max(1,sum(counts)))
 
 
@@ -82,7 +82,7 @@ show.clicker.quiz.sc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
       choice.labels[rows] = paste0("*", choice.labels[rows])
     }
 
-    plot = choices.barplot(values=dat[[var]], choices, answer=answer, choice.labels=choice.labels)
+    plot = choices.barplot(values=choices[dat$answer.ind], choices, answer=answer, choice.labels=choice.labels)
     # need random string to correctly rerender plot
     plotId = paste0(outputId,"_Plot_",random.string(nchar=8))
     ui = tagList(
@@ -122,6 +122,7 @@ show.clicker.quiz.mc.results = function(dat, qu,part.ind = 1, part = qu$parts[[p
   choices = unlist(part$choices)
 
   #dat = transform.to.mc.data(dat, choices)
+  dat$answer = choices[dat$answer.ind]
 
   sum = group_by(dat,answer) %>% summarize(yes=sum(checked),no=sum(!checked))
 

@@ -207,6 +207,18 @@ clicker.update.task = function(clicker.dir, glob=app$glob, app=getApp(), millis=
   invalidateLater(millis)
 }
 
+string.match.answers = function(answers, choices, reverse=TRUE) {
+  restore.point("string.match.answers")
+  res = match(answers, choices)
+  return(res)
+  if (any(is.na(res))) {
+    uni = unique(answers)
+    amatch = agrep(uni, choices, fixed = TRUE)
+
+  }
+
+}
+
 clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, userid=app$userid, cookie = getCourserAllCookie(), app=getApp()) {
   restore.point("clicker.make.submit.data")
   submit.time = Sys.time()
@@ -219,17 +231,18 @@ clicker.make.submit.data = function(values, qu, task.id=qu$task.id, tag=0, useri
     if (part$type == "grid_mc" | part$type == "grid_sc") {
       value.i = (value.i:(value.i+length(part$rows)-1))
       answers = unlist(values[value.i])
-      answer.ind = match(answers, part$cols)
+      answer.ind = string.match.answers(answers, part$cols)
       li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i*1000+seq_along(answers), userid=userid,cookie=cookie$key, answer.ind=answer.ind, answer =  answers, checked=TRUE)
     } else if (part$type=="mc") {
       choices = unlist(part$choices)
       answers = unlist(values[[value.i]])
-      checked = choices %in% answers
+      checked = !is.na(string.match.answers(choices, answers, reverse=TRUE))
+
       answer.ind = seq_along(choices)
       li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i, userid=userid, cookie=cookie$key, answer.ind=answer.ind, answer =  choices, checked=checked)
     } else {
       answers = unlist(values[[value.i]])
-      answer.ind = match(answers, part$choices)
+      answer.ind = string.match.answers(answers, part$choices)
       li[[i]] = data_frame(submit.time=submit.time,task.id=task.id, tag=tag, part.ind=i, userid=userid,cookie=cookie$key, answer.ind=answer.ind, answer =  answers, checked=TRUE)
     }
   }
