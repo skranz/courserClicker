@@ -178,9 +178,10 @@ show.clicker.quiz.numeric.results = function(dat, qu,part.ind = 1, part = qu$par
   restore.point("clicker.quiz.numeric.results.ui")
 
   dat = dat[dat$part.ind==part.ind,,drop=FALSE]
-  answer = as.numeric(part$answer)
+  answer = number.answer.to.numeric(part$answer)
+  nans = NROW(dat)
   var = "answer"
-  vals = dat[[var]]
+  vals = number.answer.to.numeric(dat[[var]])
 
   #plot = clicker.numeric.relative.deviation.plot(vals, answer)
   plot = clicker.numeric.quantile.plot(vals, answer)
@@ -202,7 +203,15 @@ show.clicker.quiz.numeric.results = function(dat, qu,part.ind = 1, part = qu$par
 }
 
 
-clicker.numeric.quantile.plot = function(vals, solution) {
+clicker.numeric.quantile.plot = function(vals, solution, max.deviation=10) {
+  restore.point("clicker.numeric.quantile.plot")
+  #vals = na.omit(vals)
+
+  if (solution > 0) {
+    vals[vals>solution+max.deviation*solution]=NA
+    vals[vals<solution-max.deviation*solution]=NA
+  }
+
   vals = sort(vals)
   index = seq_along(vals)
   hc <- highchart() %>%
@@ -216,7 +225,9 @@ clicker.numeric.quantile.plot = function(vals, solution) {
 }
 
 clicker.numeric.relative.deviation.plot = function(vals, solution) {
+  vals = na.omit(vals)
   answer = solution; val = vals
+
   pos.dev = (val/answer-1)
   neg.dev = (answer/val-1)
   neg = neg.dev > pos.dev
@@ -351,16 +362,16 @@ get.clicker.quiz.points = function(dat, part) {
     points = rep(0,NROW(dat))
     # give points based on relative distance
     if (!is.null(part$distance_points)) {
-      dist = abs((as.numeric(dat$anwser) - sol)/sol)
+      dist = abs((number.answer.to.numeric(dat$answer) - sol)/sol)
       for (dp in part$distance_points) {
-        rows = dist<=dp[1]
-        points[rows] = pmax(points[rows],dp[2])
+        rows = is.true(dist<=dp[[1]])
+        points[rows] = pmax(points[rows],dp[[2]])
       }
       return(points)
     }
 
     # only points if anser is exact (up to rounding)
-    answer = as.numeric(dat$answer)
+    answer = number.answer.to.numeric(dat$answer)
     if (!is.null(part$round)) {
       sol = round(sol, part$round)
       answer = round(answer, part$round)
@@ -370,4 +381,9 @@ get.clicker.quiz.points = function(dat, part) {
     return(correct * correct.points)
   }
   return(rep(0, NROW(dat)))
+}
+
+number.answer.to.numeric = function(str) {
+  str = gsub(",",".", str, fixed=TRUE)
+  as.numeric(str)
 }
