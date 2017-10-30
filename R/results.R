@@ -141,6 +141,8 @@ update.aggregate.task.data = function(clicker.dir = ct$clicker.dir, task.id = ct
     return(NULL)
 
   header.file = file.path(task.dir,"colnames.csv")
+  if (!file.exists(header.file))
+    return(NULL)
   txt = readLines(header.file,warn = FALSE)
   li = unlist(lapply(files, readLines,warn=FALSE))
   txt = c(txt, li)
