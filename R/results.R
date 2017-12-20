@@ -87,6 +87,7 @@ load.aggregate.task.data = function(task.dir = file.path(clicker.dir, "tasks", t
   if (!file.exists(data.file)) return(NULL)
   dat = read_csv(data.file,col_names = TRUE)
   dat$tag = as.character(dat$tag)
+  dat$answer = as.character(dat$answer)
   dat
 }
 
@@ -107,7 +108,7 @@ update.all.aggregate.task.data = function(clicker.dir, return.data=FALSE,...) {
   restore.point("update.all.aggregate.task.data2")
 
   li = li[!sapply(li, is.null)]
-  df = bind_rows(li)
+  df = do.call(rbind, li)
   df
 }
 
@@ -149,6 +150,7 @@ update.aggregate.task.data = function(clicker.dir = ct$clicker.dir, task.id = ct
 
   dat = readr::read_csv(merge.lines(txt))
   dat$tag = as.character(dat$tag)
+  dat$answer = as.character(dat$answer)
 
   if (is.null(ct))
     ct = readRDS(file.path(task.dir, "ct.Rds"))
