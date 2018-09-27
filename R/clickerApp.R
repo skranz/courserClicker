@@ -14,7 +14,7 @@ clicker.client.example = function() {
   port = 4634
   app.url = "127.0.0.1:4634"
   app.url = "http://localhost:4634"
-  opts = clicker.client.opts(courseid="vwl", clicker.dir=clicker.dir, app.url=app.url, app.title="Vorlesungsquiz VWL", lang="de", email.domain="uni-ulm.de", token.dir=token.dir)
+  opts = clicker.client.opts(courseid="vwl", clicker.dir=clicker.dir, app.url=app.url, app.title="Vorlesungsquiz VWL", lang="de", email.domain="uni-ulm.de", token.dir=token.dir, auto.guest.login = TRUE, make.guest.init.userid = TRUE, use.cookies=FALSE)
   app = clickerClientApp(opts)
   viewApp(app, port=port, launch.browser = TRUE)
 }
@@ -71,7 +71,7 @@ clicker.client.opts = function(
   running.dir = file.path(clicker.dir,"running"),
   token.dir = file.path(clicker.dir, "tokens"),
   need.token = FALSE,
-  just.login = FALSE,
+  auto.guest.login = FALSE,
   use.token = TRUE,
   app.url=NULL, clicker.app.url = app.url,
   init.userid="", init.password="", init.code="",

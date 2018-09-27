@@ -15,7 +15,7 @@ clicker.client.lop = function(glob){
   restore.point("clicker.client.lop")
   login.fun = clicker.client.login.fun
 
-  lop = loginModule(login.fun=login.fun, app.url=glob$app.url, app.title=glob$app.title,init.userid=glob$init.userid, container.id = "mainUI",login.ui.fun = client.clicker.login.ui, login.by.query.key = "allow", token.dir=glob$token.dir,use.signup = FALSE, lang = first.non.null(glob$lang,"en"),need.password = FALSE, cookie.name="courserClickerCookie")
+  lop = loginModule(login.fun=login.fun, app.url=glob$app.url, app.title=glob$app.title,init.userid=glob$init.userid, container.id = "mainUI",login.ui.fun = client.clicker.login.ui, login.by.query.key = "allow", token.dir=glob$token.dir,use.signup = FALSE, lang = first.non.null(glob$lang,"en"),need.password = FALSE, need.userid = !isTRUE(glob$auto.guest.login), cookie.name="courserClickerCookie")
 
   lop
 }
@@ -57,7 +57,10 @@ clicker.client.login.fun = function(app=getApp(), userid, target="_self", tok=NU
   restore.point("clicker.client.login.fun")
   glob = app$glob
 
-
+  if (userid == "") {
+    glob$guest.count = first.non.null(glob$guest.count,0)+1
+    userid = paste0("User_",glob$guest.count)
+  }
 
   courser.track.cookie(courseid=glob$courseid, token.dir=glob$token.dir,userid = userid,login.app = "clicker", login.mode = login.mode)
 
@@ -130,7 +133,7 @@ show.userid.ui = function(userid, login.mode,lop, app=getApp()) {
     html = paste0('<hr><span style="font-size: 8px; color: #444444">', app$glob$page.params$loginAs," ", userid,'</span>')
 
   # With cookie or manual login , user may be changed
-  } else {
+  } else if (!isTRUE(app$glob$auto.guest.login)) {
     setUI("useridUI", tagList(
       hr(),
       smallButton("loginNewBtn", paste0(app$glob$page.params$loginChange, " (", userid,")")),
